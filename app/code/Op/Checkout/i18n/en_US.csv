@@ -1,0 +1,63 @@
+"Order number is empty","Order number is empty"
+"No order for processing found","No order for processing found"
+"Order canceled. Failed to complete the payment.","Order canceled. Failed to complete the payment."
+"Failed to complete the payment. Please try again or contact the customer service.","Failed to complete the payment. Please try again or contact the customer service."
+"Payment failed","Payment failed"
+"Payment has been completed","Payment has been completed"
+"Order canceled. Failed to redirect to Checkout.","Order canceled. Failed to redirect to Checkout."
+Finnish,Finnish
+English,English
+Swedish,Swedish
+Nordea,Nordea
+Osuuspankki,Osuuspankki
+"Danske Bank","Danske Bank"
+Ålandsbanken,Ålandsbanken
+Handelsbanken,Handelsbanken
+S-Pankki,S-Pankki
+Aktia,Aktia
+"POP Pankki","POP Pankki"
+Säästöpankki,Säästöpankki
+"Oma Säästöpankki","Oma Säästöpankki"
+"Klarna, Invoice","Klarna, Invoice"
+"Klarna, Installment","Klarna, Installment"
+Jousto,Jousto
+"Collector Bank","Collector Bank"
+Visa,Visa
+MasterCard,MasterCard
+"Diners Club","Diners Club"
+JCB,JCB
+"Visa (Nets)","Visa (Nets)"
+"MasterCard (Nets)","MasterCard (Nets)"
+"Diners Club (Nets)","Diners Club (Nets)"
+"American Express (Nets)","American Express (Nets)"
+MobilePay,MobilePay
+"Checkout account","Checkout account"
+Paypal,Paypal
+"The customer was redirected to Checkout.","The customer was redirected to Checkout."
+"Cannot get payment URL from Checkout","Cannot get payment URL from Checkout"
+"Unexpected error (totals do not match).","Unexpected error (totals do not match)."
+"mobile","Mobile"
+"bank","Online Banking"
+"creditcard","Credit / Debit Card"
+"credit","Invoice / Part Payment"
+"Checkout Account","Checkout Account"
+PayPal,PayPal
+"Place Order","Place Order"
+"An error occurred on the server. Please try to place the order again.","An error occurred on the server. Please try to place the order again."
+Checkout,Checkout
+Enabled,Enabled
+Title,Title
+"Merchant ID","Merchant ID"
+"Merchant Secret","Merchant Secret"
+Language,Language
+"Use Payment Page Bypass","Use Payment Page Bypass"
+"Payment Methods","Payment Methods"
+"New Order Status","New Order Status"
+"Payment from Applicable Countries","Payment from Applicable Countries"
+"Payment from Specific Countries","Payment from Specific Countries"
+Instructions,Instructions
+"Minimum Order Total","Minimum Order Total"
+"Maximum Order Total","Maximum Order Total"
+"Sort Order","Sort Order"
+"Discount","Discount"
+"Shipping","Shipping"

@@ -1,0 +1,13 @@
+<?php
+/**
+ * @see \Magento\Payment\Block\Info
+ */
+?>
+<?php echo $block->escapeHtml($block->getMethod()->getTitle()) ?>
+
+<?php
+$_info = $this->getInfo();
+
+?>
+
+<?php echo $block->getChildHtml()?>

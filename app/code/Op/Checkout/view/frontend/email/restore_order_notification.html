@@ -1,0 +1,10 @@
+<!--@subject {{trans "Restore a canceled order"}} @-->
+
+{{template config_path="design/email/header_template"}}
+
+<h3>{{trans "Restore order #" + var data.order_id|raw}}</h3>
+
+<p>{{trans "The payment for the order #" + var data.order_id|raw + " has been completed while the order was in canceled state. " +
+    "Please navigate to your Magento orders, select the order in question, and click restore order. Note the stock."}}</p>
+
+{{template config_path="design/email/footer_template"}}

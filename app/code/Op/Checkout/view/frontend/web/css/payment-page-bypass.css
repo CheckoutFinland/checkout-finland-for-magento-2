@@ -1,0 +1,114 @@
+.checkout-payment-methods {
+  margin-bottom: 20px;
+}
+
+.checkout-payment-methods:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.checkout-group-title {
+  margin: 10px 0;
+}
+
+.checkout-logo {
+  display: inline-block;
+  position: relative;
+  width: 200px;
+}
+
+.checkout-logo-container {
+  height: 30px;
+  width: 100%;
+  position: absolute;
+  left: 0px;
+  top: -20px;
+}
+
+.checkout-logo img {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 100%;
+  width: auto;
+}
+
+.checkout-payment-methods .checkout-payment-method {
+  display: inline-block;
+  margin-bottom: 1%;
+  border: 1px solid #e3e3e3;
+  cursor: pointer;
+  width: 18.4%;
+  box-sizing: border-box;
+  text-align: center;
+  padding: 5px 10px;
+}
+
+.checkout-payment-methods .checkout-payment-method-title {
+  font-size: 0.9em;
+  white-space: nowrap;
+  margin-bottom: 3px;
+  display: none; /* Hidden for now, maybe shown by overriding this in a theme */
+}
+
+.checkout-payment-methods .checkout-payment-method.active {
+  border-color: #FF5501;
+}
+
+.checkout-payment-methods .checkout-payment-method:hover,
+.checkout-payment-methods .checkout-payment-method:not(.active):hover {
+  border-color: #FFA273;
+}
+
+.checkout-payment-methods .checkout-payment-method input[type="radio"] {
+}
+
+.checkout-payment-methods .checkout-payment-method:nth-child(5n+0) {
+  margin-right: 0;
+}
+
+.checkout-payment-methods .checkout-payment-method-logo {
+  width: 120px;
+  height: 60px;
+  margin: auto;
+  max-width: 100%;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+}
+
+.checkout-payment-methods .checkout-payment-method-logo img {
+  width: auto;
+  height: 90%;
+}
+
+@media only screen and (max-width : 1023px) {
+  .checkout-payment-methods .checkout-payment-method {
+    width: 23.5%;
+  }
+
+  .checkout-payment-methods .checkout-payment-method:nth-child(5n+0) { margin-right: 2%; }
+  .checkout-payment-methods .checkout-payment-method:nth-child(4n+0) { margin-right: 0; }
+}
+
+@media only screen and (max-width : 767px) {
+  .checkout-payment-methods .checkout-payment-method {
+    width: 32%;
+  }
+
+  .checkout-payment-methods .checkout-payment-method:nth-child(5n+0),
+  .checkout-payment-methods .checkout-payment-method:nth-child(4n+0) { margin-right: 2%; }
+  .checkout-payment-methods .checkout-payment-method:nth-child(3n+0) { margin-right: 0; }
+}
+
+@media only screen and (max-width : 320px) {
+  .checkout-payment-methods .checkout-payment-method {
+    width: 49%;
+  }
+
+  .checkout-payment-methods .checkout-payment-method:nth-child(5n+0),
+  .checkout-payment-methods .checkout-payment-method:nth-child(4n+0),
+  .checkout-payment-methods .checkout-payment-method:nth-child(3n+0) { margin-right: 2%; }
+  .checkout-payment-methods .checkout-payment-method:nth-child(2n+0) { margin-right: 0; }
+}

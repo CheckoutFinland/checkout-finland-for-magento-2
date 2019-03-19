@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Email:etc/email_templates.xsd">
+    <template id="restore_order_notification"
+              label="Restore order"
+              file="restore_order_notification.html" type="html"
+              module="Op_Checkout" area="frontend"/>
+</config>
