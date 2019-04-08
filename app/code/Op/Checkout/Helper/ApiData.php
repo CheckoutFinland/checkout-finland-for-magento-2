@@ -83,10 +83,7 @@ class ApiData
             } else {
                 $response = $client->get(self::API_ENDPOINT . $uri, ['body' => '']);
             }
-
-            // FIXME: response log
-            //$this->log->debug('test');
-            //$this->log->debug(json_encode($response->getBody()->getContents()));
+            // TODO: add logging here ?
         } catch (\GuzzleHttp\Exception\RequestException $e) {
             // TODO: should we check here for the error code ?
             if ($e->hasResponse()) {

@@ -33,7 +33,6 @@ class Index extends \Magento\Framework\App\Action\Action
 
     public function execute()
     {
-        //exit;
         $isValid = true;
         $failMessage = null;
         $validationResponse = $this->responseValidator->validate($this->getRequest()->getParams());

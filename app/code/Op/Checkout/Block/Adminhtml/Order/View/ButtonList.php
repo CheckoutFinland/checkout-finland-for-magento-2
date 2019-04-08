@@ -66,7 +66,7 @@ class ButtonList extends \Magento\Backend\Block\Widget\Button\ButtonList
          * Check if the rescue button has been clicked,
          * verify that the cookie matches the current order, and rescue the items
          */
-        //TODO: WTF ?
+        //TODO: rescuing order
         if (isset($_COOKIE['rescue']) && $_COOKIE['rescue'] == $orderId) {
             $this->activateOrder->activateOrder($orderId); // Rescue items
             setcookie('rescue', ''); // Reset cookie
