@@ -14,5 +14,7 @@ class RefundHandler implements HandlerInterface
         $payment->setIsTransactionClosed(true);
         $payment->setTransactionId($transactionId);
         $payment->setShouldCloseParentTransaction(false);
+
+        //TODO: add refund details to transaction ?
     }
 }

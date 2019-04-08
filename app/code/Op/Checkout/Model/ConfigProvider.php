@@ -9,7 +9,7 @@ use Magento\Payment\Helper\Data as PaymentHelper;
 
 class ConfigProvider implements ConfigProviderInterface
 {
-    const CODE = 'checkout';
+    const CODE = 'opcheckout';
 
     protected $methodCodes = [
         self::CODE,
@@ -36,19 +36,20 @@ class ConfigProvider implements ConfigProviderInterface
     {
         $config = [];
         $config['payment']['instructions'][self::CODE] = $this->ophelper->getInstructions(self::CODE);
-        $config['payment']['use_bypass'][self::CODE] = true; //$this->getUseBypass($code);
+        $config['payment']['use_bypass'][self::CODE] = true;
         $config['payment']['method_groups'][self::CODE] = $this->getEnabledPaymentMethodGroups();
         $config['payment']['payment_redirect_url'][self::CODE] = $this->getPaymentRedirectUrl();
         $config['payment']['payment_template'][self::CODE] = $this->ophelper->getPaymentTemplate();
+
         return $config;
     }
 
-    public function getPaymentRedirectUrl()
+    protected function getPaymentRedirectUrl()
     {
-        return 'checkout/redirect';
+        return 'opcheckout/redirect';
     }
 
-    public function getAllPaymentMethods($orderValue = 25)
+    protected function getAllPaymentMethods($orderValue = 25)
     {
         $uri = '/merchants/payment-providers?amount=' . $orderValue * 100;
         $merchantId = $this->ophelper->getMerchantId();
@@ -60,7 +61,7 @@ class ConfigProvider implements ConfigProviderInterface
         return $response['data'];
     }
 
-    public function getEnabledPaymentMethodGroups()
+    protected function getEnabledPaymentMethodGroups()
     {
         $responseData = $this->getAllPaymentMethods();
 
@@ -74,7 +75,12 @@ class ConfigProvider implements ConfigProviderInterface
             ];
         }
 
-        // Add methods to groups
+        return $this->addMethodsToGroups($groups, $responseData);
+}
+
+
+    protected function addMethodsToGroups($groups, $responseData)
+    {
         foreach ($groups as $key => $group) {
             $groups[$key]['methods'] = $this->getEnabledPaymentMethodsByGroup($responseData, $group['id']);
 
@@ -83,7 +89,6 @@ class ConfigProvider implements ConfigProviderInterface
                 unset($groups[$key]);
             }
         }
-
         return array_values($groups);
     }
 

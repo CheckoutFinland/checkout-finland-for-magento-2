@@ -12,8 +12,8 @@ define(
         'use strict';
         rendererList.push(
             {
-                type: 'checkout',
-                component: 'Op_Checkout/js/view/payment/method-renderer/checkout-method'
+                type: 'opcheckout',
+                component: 'Op_Checkout/js/view/payment/method-renderer/opcheckout-method'
             }
         );
         return Component.extend({});

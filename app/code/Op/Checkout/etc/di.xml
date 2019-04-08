@@ -12,7 +12,6 @@
     </arguments>
   </type>
 
-
   <virtualType name="OpCheckoutAdapter" type="Magento\Payment\Model\Method\Adapter">
     <arguments>
       <argument name="code" xsi:type="const">Op\Checkout\Model\ConfigProvider::CODE</argument>
@@ -20,6 +19,7 @@
       <argument name="infoBlockType" xsi:type="string">Op\Checkout\Block\Info\Checkout</argument>
       <argument name="valueHandlerPool" xsi:type="object">OpCheckoutValueHandlerPool</argument>
       <argument name="commandPool" xsi:type="object">OpCheckoutCommandPool</argument>
+      <argument name="validatorPool" xsi:type="object">OpCheckoutValidatorPool</argument>
     </arguments>
   </virtualType>
 
@@ -68,4 +68,19 @@
       </argument>
     </arguments>
   </virtualType>
+
+  <virtualType name="OpCheckoutCountryValidator" type="Op\Checkout\Gateway\Validator\CountryValidator">
+    <arguments>
+      <argument name="config" xsi:type="object">Op\Checkout\Gateway\Config\Config</argument>
+    </arguments>
+  </virtualType>
+  <virtualType name="OpCheckoutValidatorPool" type="Magento\Payment\Gateway\Validator\ValidatorPool">
+    <arguments>
+      <argument name="validators" xsi:type="array">
+        <item name="country" xsi:type="string">OpCheckoutCountryValidator</item>
+      </argument>
+    </arguments>
+  </virtualType>
+
+
 </config>

@@ -19,20 +19,7 @@ class Signature
         $this->log = $log;
     }
 
-    /**
-     * Calculate Checkout HMAC
-     *
-     * For more information about the signature headers:
-     * @see https://checkoutfinland.github.io/psp-api/#/?id=headers-and-request-signing
-     * @see https://checkoutfinland.github.io/psp-api/#/?id=redirect-and-callback-url-parameters
-     *
-     * @param array[string]  $params    HTTP headers in an associative array.
-     *
-     * @param string                $body      HTTP request body, empty string for GET requests
-     * @param string                $secretKey The merchant secret key.
-     * @return string SHA-256 HMAC
-     */
-    public function calculateHmac(array $params = [], $body = NULL, $secretKey = NULL)
+    public function calculateHmac(array $params = [], $body = null, $secretKey = null)
     {
         // Keep only checkout- params, more relevant for response validation.
         $includedKeys = array_filter(array_keys($params), function ($key) {
@@ -51,25 +38,13 @@ class Signature
         array_push($hmacPayload, $body);
         return hash_hmac('sha256', join("\n", $hmacPayload), $secretKey);
     }
-    /**
-     * Evaluate a response signature validity.
-     *
-     * For more information about the signature headers:
-     * @see https://checkoutfinland.github.io/psp-api/#/?id=headers-and-request-signing
-     * @see https://checkoutfinland.github.io/psp-api/#/?id=redirect-and-callback-url-parameters
-     *
-     * @param array  $params    The response parameters.
-     * @param string $body      The response body.
-     * @param string $signature The response signature key.
-     * @param string $secretKey The merchant secret key.
-     *
-     * @throws HmacException
-     */
+
+
     public function validateHmac(
         array $params = [],
-        $body = NULL,
-        $signature = NULL,
-        $secretKey = NULL
+        $body = null,
+        $signature = null,
+        $secretKey = null
     ) {
         $hmac = static::calculateHmac($params, $body, $secretKey);
         if ($hmac !== $signature) {

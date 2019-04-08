@@ -33,6 +33,7 @@ class Index extends \Magento\Framework\App\Action\Action
 
     public function execute()
     {
+        //exit;
         $isValid = true;
         $failMessage = null;
         $validationResponse = $this->responseValidator->validate($this->getRequest()->getParams());
@@ -68,7 +69,8 @@ class Index extends \Magento\Framework\App\Action\Action
             $this->messageManager->addErrorMessage(__($failMessage));
             $this->_redirect('checkout/cart');
         } else {
-            $quote = $this->session->getQuote()->setIsActive(false);
+            $quote = $this->session->getQuote();
+            $quote->setIsActive(false);
             $this->quoteRepository->save($quote);
             $this->_redirect('checkout/onepage/success');
         }

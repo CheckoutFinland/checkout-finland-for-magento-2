@@ -16,9 +16,9 @@
                                                         <item name="renders" xsi:type="array">
                                                             <item name="children" xsi:type="array">
                                                                 <item name="checkout-payment" xsi:type="array">
-                                                                    <item name="component" xsi:type="string">Op_Checkout/js/view/payment/checkout-payment</item>
+                                                                    <item name="component" xsi:type="string">Op_Checkout/js/view/payment/opcheckout-payment</item>
                                                                     <item name="methods" xsi:type="array">
-                                                                        <item name="checkout" xsi:type="array">
+                                                                        <item name="opcheckout" xsi:type="array">
                                                                             <item name="isBillingAddressRequired" xsi:type="boolean">true</item>
                                                                         </item>
                                                                     </item>

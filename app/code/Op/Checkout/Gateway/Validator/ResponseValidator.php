@@ -34,10 +34,6 @@ class ResponseValidator extends AbstractValidator
         $this->signature = $signature;
     }
 
-    /**
-     * @param array $validationSubject
-     * @return \Magento\Payment\Gateway\Validator\ResultInterface|void
-     */
     public function validate(array $validationSubject)
     {
         $isValid = true;
@@ -70,8 +66,6 @@ class ResponseValidator extends AbstractValidator
         if (sizeof($fails) > 0) {
             $isValid = false;
         }
-
-        /** hmm */
         return $this->createResult($isValid, $fails);
     }
 

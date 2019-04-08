@@ -1,13 +1,2 @@
-<?php
-/**
- * @see \Magento\Payment\Block\Info
- */
-?>
-<?php echo $block->escapeHtml($block->getMethod()->getTitle()) ?>
-
-<?php
-$_info = $this->getInfo();
-
-?>
-
+<img src="<?php echo $this->getOpCheckoutLogo(); ?>" style="width: 100px;">
 <?php echo $block->getChildHtml()?>

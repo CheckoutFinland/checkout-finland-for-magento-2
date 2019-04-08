@@ -4,19 +4,16 @@ namespace Op\Checkout\Block\Redirect;
 
 class Checkout extends \Magento\Framework\View\Element\AbstractBlock
 {
-    protected $log;
     protected $form;
     protected $params;
     protected $url;
     protected $formId = 'checkout_form';
 
     public function __construct(
-        \Psr\Log\LoggerInterface $log,
         \Magento\Framework\Data\Form $form,
         \Magento\Framework\View\Element\Context $context,
         array $data = []
     ) {
-        $this->log = $log;
         $this->form = $form;
         parent::__construct($context, $data);
     }

@@ -1,11 +1,14 @@
 <?php
 namespace Op\Checkout\Gateway\Http\Client;
 
-class TransactionRefund extends AbstractTransaction
+use Magento\Payment\Gateway\Http\ClientInterface;
+
+class TransactionRefund implements ClientInterface
 {
-    protected function process(array $data)
+    public function placeRequest(\Magento\Payment\Gateway\Http\TransferInterface $transferObject)
     {
-        $response['object'] = [];
-        return $response;
+        $requests = $transferObject->getBody();
+        $responses = [];
+        return $responses;
     }
 }

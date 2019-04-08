@@ -30,7 +30,6 @@ class TransferFactory implements TransferFactoryInterface
      */
     public function create(array $request)
     {
-
         return $this->transferBuilder
             ->setBody($request)
             ->build();

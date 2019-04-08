@@ -26,7 +26,7 @@ define(
         var self;
         return Component.extend({
             defaults: {
-                template: window.checkoutConfig.payment.payment_template.checkout
+                template: window.checkoutConfig.payment.payment_template.opcheckout
             },
             redirectAfterPlaceOrder: false,
             selectedPaymentMethodId: ko.observable(0),
@@ -104,18 +104,8 @@ define(
                     message: msg
                 });
             },
-
             getBypassPaymentRedirectUrl: function () {
                 return window.checkoutConfig.payment.payment_redirect_url[this.item.method];
-            },
-
-            getRestPaymentRedirectUrl: function () {
-                var serviceUrl = 'rest/V1/checkout/redirect';
-                var completeUrl = mageUrlBuilder.build(serviceUrl);
-
-                return jQuery.ajax(completeUrl, {
-                    cache: false
-                });
             },
             scrollTo: function () {
                 var errorElement_offset;

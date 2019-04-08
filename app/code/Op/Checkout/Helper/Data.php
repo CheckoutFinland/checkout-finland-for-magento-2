@@ -14,20 +14,20 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $methodCodes = [\Op\Checkout\Model\ConfigProvider::CODE];
 
-    const MERCHANT_SECRET_PATH = 'payment/checkout/merchant_secret';
-    const MERCHANT_ID_PATH = 'payment/checkout/merchant_id';
-    const DEBUG_LOG = 'payment/checkout/debuglog';
-    const DEFAULT_ORDER_STATUS = 'payment/checkout/order_status';
-    const NOTIFICATION_EMAIL = 'payment/checkout/recipient_email';
+    const MERCHANT_SECRET_PATH = 'payment/opcheckout/merchant_secret';
+    const MERCHANT_ID_PATH = 'payment/opcheckout/merchant_id';
+    const DEBUG_LOG = 'payment/opcheckout/debuglog';
+    const DEFAULT_ORDER_STATUS = 'payment/opcheckout/order_status';
+    const NOTIFICATION_EMAIL = 'payment/opcheckout/recipient_email';
     const BYPASS_PATH = 'Op_Checkout/payment/checkout-bypass';
+    const LOGO = 'payment/opcheckout/logo';
 
     public function __construct(
         Context $context,
         Escaper $escaper,
         \Magento\Framework\Encryption\EncryptorInterface $encryptor,
         \Magento\Store\Model\StoreManagerInterface $storeManager
-    )
-    {
+    ) {
         parent::__construct($context);
         $this->encryptor = $encryptor;
         $this->_storeManager = $storeManager;
@@ -104,5 +104,4 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         return ["sha256", "sha512"];
     }
-
 }

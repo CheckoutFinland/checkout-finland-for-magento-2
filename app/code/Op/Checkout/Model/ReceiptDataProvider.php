@@ -7,9 +7,8 @@ use Magento\Sales\Model\Order\Payment\Transaction\Builder as transactionBuilder;
 use Magento\Sales\Model\Order\Payment\Transaction\BuilderInterface as transactionBuilderInterface;
 use Magento\Framework\Mail\Template\TransportBuilder;
 use Magento\Sales\Api\OrderManagementInterface;
-use Op\Checkout\Helper\ActivateOrder;
-use Op\Checkout\Model\Api\Checkout as Checkout;
 use Op\Checkout\Helper\Data as opHelper;
+use Op\Checkout\Helper\Signature;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Op\Checkout\Gateway\Validator\ResponseValidator;
 use Op\Checkout\Gateway\Request\Capture as opCapture;
@@ -25,13 +24,12 @@ class ReceiptDataProvider
     protected $transactionRepository;
     protected $orderFactory;
     protected $orderSender;
-    protected $activateOrder;
     protected $scopeConfig;
-    protected $checkout;
     protected $orderManagementInterface;
     protected $orderRepositoryInterface;
     protected $responseValidator;
     protected $transactionBuilderInterface;
+    protected $signature;
     /**
      * @var opCapture
      */
@@ -71,31 +69,28 @@ class ReceiptDataProvider
         \Magento\Checkout\Model\Session $session,
         \Magento\Sales\Api\TransactionRepositoryInterface $transactionRepository,
         \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender,
-        ActivateOrder $activateOrder,
         TransportBuilder $transportBuilder,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        Checkout $checkout,
         OrderManagementInterface $orderManagementInterface,
         ResponseValidator $responseValidator,
         OrderRepositoryInterface $orderRepositoryInterface,
         transactionBuilderInterface $transactionBuilderInterface,
         opCapture $opCapture,
+        Signature $signature,
         InvoiceService $invoiceService,
         OrderStatusHistoryRepositoryInterface $orderStatusHistoryRepository,
         TransactionFactory $transactionFactory,
         opHelper $opHelper,
         OrderInterface $orderInterface,
         transactionBuilder $transactionBuilder
-    )
-    {
+    ) {
         $this->urlBuilder = $context->getUrl();
         $this->session = $session;
         $this->transactionRepository = $transactionRepository;
         $this->orderSender = $orderSender;
-        $this->activateOrder = $activateOrder;
         $this->transportBuilder = $transportBuilder;
         $this->scopeConfig = $scopeConfig;
-        $this->checkout = $checkout;
+        $this->signature = $signature;
         $this->orderManagementInterface = $orderManagementInterface;
         $this->orderRepositoryInterface = $orderRepositoryInterface;
         $this->responseValidator = $responseValidator;
@@ -213,7 +208,7 @@ class ReceiptDataProvider
         }
     }
 
-    public function getDetails()
+    protected function getDetails()
     {
         return [
             'orderNo'   => $this->orderIncrementalId,
@@ -233,7 +228,7 @@ class ReceiptDataProvider
 
     protected function verifyPaymentData($params)
     {
-        $verifiedPayment = $this->checkout->verifyPayment($params['signature'], $params['checkout-status'], $params);
+        $verifiedPayment = $this->verifyPayment($params['signature'], $params['checkout-status'], $params);
         if (!$verifiedPayment) {
             $this->currentOrder->addCommentToStatusHistory(__('Order canceled. Failed to complete the payment.'));
             $this->orderRepositoryInterface->save($this->currentOrder);
@@ -270,7 +265,7 @@ class ReceiptDataProvider
         return true;
     }
 
-    public function addPaymentTransaction(\Magento\Sales\Model\Order $order, $transactionId, array $details = [])
+    protected function addPaymentTransaction(\Magento\Sales\Model\Order $order, $transactionId, array $details = [])
     {
         $transaction = null;
         $payment = $order->getPayment();
@@ -300,4 +295,16 @@ class ReceiptDataProvider
     {
         throw new TransactionSuccessException(__('All fine'));
     }
+
+    protected function verifyPayment($signature, $status, $params)
+    {
+        $hmac = $this->signature->calculateHmac($params, '', $this->opHelper->getMerchantSecret());
+
+        if ($signature === $hmac && ($status === 'ok' || $status === 'pending')) {
+            return $status;
+        } else {
+            return false;
+        }
+    }
+
 }
