@@ -20,6 +20,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     const DEFAULT_ORDER_STATUS = 'payment/opcheckout/order_status';
     const NOTIFICATION_EMAIL = 'payment/opcheckout/recipient_email';
     const BYPASS_PATH = 'Op_Checkout/payment/checkout-bypass';
+    const CHECKOUT_PATH = 'Op_Checkout/payment/checkout';
+    const SKIP_BANK_SELECTION = 'payment/opcheckout/skip_bank_selection';
+
     const LOGO = 'payment/opcheckout/logo';
 
     public function __construct(
@@ -57,6 +60,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->getConfig(self::MERCHANT_ID_PATH);
     }
 
+    public function getSkipBankSelection()
+    {
+        return $this->getConfig(self::SKIP_BANK_SELECTION);
+    }
+
     public function getNotificationEmail()
     {
         return $this->getConfig(self::NOTIFICATION_EMAIL);
@@ -77,6 +85,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getPaymentTemplate()
     {
+        if ($this->getSkipBankSelection()) {
+            return self::CHECKOUT_PATH;
+        }
         return self::BYPASS_PATH;
     }
 
@@ -95,9 +106,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->methods[$code]->getEnabledPaymentMethodGroups();
     }
 
-    public function getInstructions($code)
+    public function getInstructions()
     {
-        return 'Mega instructions'; //nl2br($this->escaper->escapeHtml($this->methods[$code]->getInstructions()));
+        if ($this->getSkipBankSelection()) {
+            return "You will be redirected to OP Checkout.";
+        }
+        return null;
     }
 
     public function getValidAlgorithms()
