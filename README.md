@@ -12,7 +12,6 @@ This payment module has the following features:
 - Support for delayed payments (Collector etc.)
 - Support for multiple stores within a single Magento 2 instance
 
-
 ## Installation
 Steps:
 1. Download module from GitHub
@@ -27,7 +26,8 @@ The module settings can be found from:
 __Stores -> Configuration -> Sales -> Payment Methods -> OP Checkout__
 
 The module has the following settings:
-- __Enable__: Defines whether the payment method is enable or not *(Input: Yes / No)*
+- __Enable__: Defines whether the payment method is enabled or not *(Input: Yes / No)*
+- __Skip bank selection__: Defines whether the bank selection will be skipped or not *(Input: Yes / No)*
 - __Merchant ID__: Your merchant ID from OP Checkout *(Input: Text)*
 - __Merchant Secret__: Your merchant secret from OP Checkout *(Input: Secret)*
 - __New Order Status__: A custom status for a new order paid for with OP Checkout *(Input: Selection)*
