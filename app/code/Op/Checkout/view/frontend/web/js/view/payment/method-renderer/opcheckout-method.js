@@ -138,10 +138,9 @@ define(
                 }
             },
             placeOrderBypass: function () {
-
                 placeOrderAction(self.getData(), self.messageContainer).done(function () {
                     fullScreenLoader.startLoader();
-                    console.log(self.selectedPaymentMethodId());
+                    //console.log(self.selectedPaymentMethodId());
                     $.ajax({
                         url: mageUrlBuilder.build(self.getBypassPaymentRedirectUrl()),
                         type: 'post',
@@ -149,6 +148,9 @@ define(
                         data: {'is_ajax': true, 'preselected_payment_method_id': self.selectedPaymentMethodId()}
                     }).done(function (response) {
                         if ($.type(response) == 'object' && response.success && response.data) {
+                            if (response.redirect) {
+                                window.location.href = response.redirect;
+                            }
                             $('#checkout-form-wrapper').append(response.data);
                             return false;
                         }
