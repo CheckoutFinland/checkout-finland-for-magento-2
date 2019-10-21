@@ -17,6 +17,7 @@ class ApiData
     protected $resourceConfig;
     protected $taxHelper;
     protected $countryInfo;
+    protected $dataHelper;
 
     /**
      * ApiData constructor.
@@ -37,7 +38,8 @@ class ApiData
         \Magento\Framework\Serialize\Serializer\Json $json,
         CountryInformationAcquirerInterface $countryInformationAcquirer,
         TaxHelper $taxHelper,
-        \Magento\Config\Model\ResourceModel\Config $resourceConfig
+        \Magento\Config\Model\ResourceModel\Config $resourceConfig,
+        \Op\Checkout\Helper\Data $dataHelper
     ) {
         $this->log = $log;
         $this->signature = $signature;
@@ -47,6 +49,7 @@ class ApiData
         $this->json = $json;
         $this->taxHelper = $taxHelper;
         $this->countryInfo = $countryInformationAcquirer;
+        $this->dataHelper = $dataHelper;
     }
 
     public function getResponse(
@@ -162,8 +165,10 @@ class ApiData
             JSON_UNESCAPED_SLASHES
         );
 
-        // TODO: DEBUG Log
-        $this->log->debug($body);
+        if ($this->dataHelper->getDebugLoggerStatus()) {
+            $this->log->debug($body);
+        }
+
 
         return $body;
     }
