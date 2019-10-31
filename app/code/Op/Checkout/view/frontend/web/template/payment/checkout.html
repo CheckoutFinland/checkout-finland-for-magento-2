@@ -4,8 +4,13 @@
                name="payment[method]"
                class="radio"
                data-bind="attr: {'id': getCode()}, value: getCode(), checked: isChecked, click: selectPaymentMethod, visible: isRadioButtonVisible()"/>
-        <label data-bind="attr: {'for': getCode()}" class="label"><span data-bind="text: getTitle()"></span></label>
-    </div>
+        <label data-bind="attr: {'for': getCode()}" class="label">
+            <div class="checkout-logo">
+                <div class="checkout-logo-container">
+                    <img src="https://cdn2.hubspot.net/hubfs/2610868/ext-media/op-psp-master-logo.svg" alt="OP Checkout">
+                </div>
+            </div>
+        </label>    </div>
 
     <div class="payment-method-content">
         <!-- ko foreach: getRegion('messages') -->

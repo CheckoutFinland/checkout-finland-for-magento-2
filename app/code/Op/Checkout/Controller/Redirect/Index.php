@@ -61,6 +61,11 @@ class Index extends \Magento\Framework\App\Action\Action
 
     public function execute()
     {
+
+        $resultJson = $this->jsonFactory->create();
+
+
+
         $order = null;
         try {
             if ($this->getRequest()->getParam('is_ajax')) {
@@ -77,7 +82,15 @@ class Index extends \Magento\Framework\App\Action\Action
                 $formData = $this->getFormFields($responseData, $selectedPaymentMethodId);
                 $formAction = $this->getFormAction($responseData, $selectedPaymentMethodId);
 
-                // Create block containing form data
+                if ($this->opHelper->getSkipBankSelection()) {
+                    $redirect_url = $responseData->href;
+                    return $resultJson->setData([
+                        'success' => true,
+                        'data' => 'redirect',
+                        'redirect' => $redirect_url
+                    ]);
+                }
+
                 $block = $this->pageFactory
                     ->create()
                     ->getLayout()
@@ -85,7 +98,6 @@ class Index extends \Magento\Framework\App\Action\Action
                     ->setUrl($formAction)
                     ->setParams($formData);
 
-                $resultJson = $this->jsonFactory->create();
 
                 return $resultJson->setData([
                     'success' => true,
