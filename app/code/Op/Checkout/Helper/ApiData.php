@@ -187,6 +187,7 @@ class ApiData
         }
     }
 
+
     /**
      * @param $account
      * @param $method
@@ -194,12 +195,12 @@ class ApiData
      */
     protected function getResponseHeaders($account, $method)
     {
-        return $headers = [
+        return [
             'cof-plugin-version' => 'op-payment-service-for-magento-2-'.$this->getExtensionVersion(),
             'checkout-account' => $account,
             'checkout-algorithm' => 'sha256',
             'checkout-method' => strtoupper($method),
-            'checkout-nonce' => uniqid(true),
+            'checkout-nonce' => uniqid('', true),
             'checkout-timestamp' => date('Y-m-d\TH:i:s.000\Z', time()),
             'content-type' => 'application/json; charset=utf-8',
         ];
