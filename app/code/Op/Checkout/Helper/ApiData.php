@@ -187,7 +187,6 @@ class ApiData
         }
     }
 
-
     /**
      * @param $account
      * @param $method
