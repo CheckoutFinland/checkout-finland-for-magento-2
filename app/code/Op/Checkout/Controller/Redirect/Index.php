@@ -111,7 +111,7 @@ class Index extends \Magento\Framework\App\Action\Action
 
         if ($order) {
             $this->orderManagementInterface->cancel($order->getId());
-            $order->addCommentToStatusHistory(__('Order canceled. Failed to redirect to OP Checkout.'));
+            $order->addCommentToStatusHistory(__('Order canceled. Failed to redirect to OP Payment Service.'));
             $this->orderRepositoryInterface->save($order);
         }
 
