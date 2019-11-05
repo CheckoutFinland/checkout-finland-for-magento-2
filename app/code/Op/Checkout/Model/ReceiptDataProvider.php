@@ -137,7 +137,7 @@ class ReceiptDataProvider
         if ($paymentVerified === 'pending') {
             $this->currentOrder->setState('pending_opcheckout');
             $this->currentOrder->setStatus('pending_opcheckout');
-            $this->currentOrder->addCommentToStatusHistory(__('Pending payment from OP Checkout'));
+            $this->currentOrder->addCommentToStatusHistory(__('Pending payment from OP Payment Service'));
         } else {
             $this->currentOrder->setState($orderState)->setStatus($orderState);
             $this->currentOrder->addCommentToStatusHistory(__('Payment has been completed'));

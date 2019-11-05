@@ -20,7 +20,7 @@
         <can_capture_partial>0</can_capture_partial>
         <can_refund>1</can_refund>
         <can_refund_partial_per_invoice>1</can_refund_partial_per_invoice>
-        <logo>https://cdn2.hubspot.net/hubfs/2610868/ext-media/op-psp-master-logo.svg</logo>
+        <logo>https://cdn2.hubspot.net/hubfs/2610868/op-financial-group.svg</logo>
         <!--logo>https://checkout.fi/wp-content/uploads/checkout-logo-pysty-RGB.png</logo-->
 
       </opcheckout>

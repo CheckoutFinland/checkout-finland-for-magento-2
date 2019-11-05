@@ -1,54 +1,125 @@
 <?php
 namespace Op\Checkout\Helper;
 
+use Magento\Config\Model\ResourceModel\Config;
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\Module\ModuleListInterface;
+use Magento\Framework\Serialize\Serializer\Json;
+use Magento\Framework\UrlInterface;
 use Magento\Tax\Helper\Data as TaxHelper;
 use Magento\Directory\Api\CountryInformationAcquirerInterface;
-
+use Psr\Log\LoggerInterface;
+use Op\Checkout\Helper\Data as DataHelper;
 
 class ApiData
 {
+    /**
+     * @var string API_ENDPOINT
+     */
     const API_ENDPOINT = 'https://api.checkout.fi';
 
-    protected $log;
-    protected $signature;
-    protected $urlBuilder;
-    protected $request;
-    protected $json;
-    protected $resourceConfig;
-    protected $taxHelper;
-    protected $countryInfo;
+    /**
+     * @var string MODULE_CODE
+     */
+    const MODULE_CODE = 'Op_Checkout';
+
+    /**
+     * @var LoggerInterface
+     */
+    private $log;
+
+    /**
+     * @var Signature
+     */
+    private $signature;
+
+    /**
+     * @var UrlInterface
+     */
+    private $urlBuilder;
+
+    /**
+     * @var RequestInterface
+     */
+    private $request;
+
+    /**
+     * @var Json
+     */
+    private $json;
+
+    /**
+     * @var CountryInformationAcquirerInterface
+     */
+    private $countryInfo;
+
+    /**
+     * @var TaxHelper
+     */
+    private $taxHelper;
+
+    /**
+     * @var Config
+     */
+    private $resourceConfig;
+
+    /**
+     * @var ModuleListInterface
+     */
+    private $moduleList;
+
+    /**
+     * @var DataHelper
+     */
+    private $dataHelper;
 
     /**
      * ApiData constructor.
-     * @param \Psr\Log\LoggerInterface $log
+     * @param LoggerInterface $log
      * @param Signature $signature
-     * @param \Magento\Framework\UrlInterface $urlBuilder
-     * @param \Magento\Framework\App\RequestInterface $request
-     * @param \Magento\Framework\Serialize\Serializer\Json $json
+     * @param UrlInterface $urlBuilder
+     * @param RequestInterface $request
+     * @param Json $json
      * @param CountryInformationAcquirerInterface $countryInformationAcquirer
      * @param TaxHelper $taxHelper
-     * @param \Magento\Config\Model\ResourceModel\Config $resourceConfig
+     * @param Config $resourceConfig
+     * @param ModuleListInterface $moduleList
+     * @param DataHelper $dataHelper
      */
     public function __construct(
-        \Psr\Log\LoggerInterface $log,
+        LoggerInterface $log,
         Signature $signature,
-        \Magento\Framework\UrlInterface $urlBuilder,
-        \Magento\Framework\App\RequestInterface $request,
-        \Magento\Framework\Serialize\Serializer\Json $json,
+        UrlInterface $urlBuilder,
+        RequestInterface $request,
+        Json $json,
         CountryInformationAcquirerInterface $countryInformationAcquirer,
         TaxHelper $taxHelper,
-        \Magento\Config\Model\ResourceModel\Config $resourceConfig
+        Config $resourceConfig,
+        ModuleListInterface $moduleList,
+        DataHelper $dataHelper
     ) {
         $this->log = $log;
         $this->signature = $signature;
         $this->urlBuilder = $urlBuilder;
         $this->request = $request;
-        $this->resourceConfig = $resourceConfig;
         $this->json = $json;
-        $this->taxHelper = $taxHelper;
         $this->countryInfo = $countryInformationAcquirer;
+        $this->taxHelper = $taxHelper;
+        $this->resourceConfig = $resourceConfig;
+        $this->moduleList = $moduleList;
+        $this->dataHelper = $dataHelper;
     }
 
+    /**
+     * @param $uri
+     * @param $order
+     * @param $merchantId
+     * @param $merchantSecret
+     * @param $method
+     * @param null $refundId
+     * @param null $refundBody
+     * @return array|null
+     */
     public function getResponse(
         $uri,
         $order,
@@ -116,9 +187,15 @@ class ApiData
         }
     }
 
+    /**
+     * @param $account
+     * @param $method
+     * @return array
+     */
     protected function getResponseHeaders($account, $method)
     {
         return [
+            'cof-plugin-version' => 'op-payment-service-for-magento-2-'.$this->getExtensionVersion(),
             'checkout-account' => $account,
             'checkout-algorithm' => 'sha256',
             'checkout-method' => strtoupper($method),
@@ -128,6 +205,10 @@ class ApiData
         ];
     }
 
+    /**
+     * @param $order
+     * @return string
+     */
     protected function getResponseBody($order)
     {
         $billingAddress = $order->getBillingAddress();
@@ -162,12 +243,18 @@ class ApiData
             JSON_UNESCAPED_SLASHES
         );
 
-        // TODO: DEBUG Log
-        $this->log->debug($body);
+        if ($this->dataHelper->getDebugLoggerStatus()) {
+            $this->log->debug($body);
+        }
+
 
         return $body;
     }
 
+    /**
+     * @param $address
+     * @return array
+     */
     protected function formatAddress($address)
     {
         $country = $this->countryInfo->getCountryInfo($address->getCountryId())->getFullNameLocale();
@@ -201,6 +288,10 @@ class ApiData
     }
 
 
+    /**
+     * @param $order
+     * @return array
+     */
     protected function getOrderItems($order)
     {
         $items = [];
@@ -219,6 +310,10 @@ class ApiData
         return $items;
     }
 
+    /**
+     * @param $order
+     * @return array
+     */
     protected function itemArgs($order)
     {
         $items = array();
@@ -308,6 +403,10 @@ class ApiData
         return $items;
     }
 
+    /**
+     * @param \Magento\Sales\Model\Order $order
+     * @return mixed
+     */
     private function _getDiscountData(\Magento\Sales\Model\Order $order)
     {
         $discountIncl = 0;
@@ -345,4 +444,10 @@ class ApiData
         return $return->setDiscountInclTax($discountIncl)->setDiscountExclTax($discountExcl);
     }
 
+    /**
+     * @return string module version in format x.x.x
+     */
+    protected function getExtensionVersion() {
+        return $this->moduleList->getOne(self::MODULE_CODE)['setup_version'];
+    }
 }
