@@ -1,5 +1,5 @@
 {
-  "name": "op/checkout",
+  "name": "op-merchant-services/op-payment-service-for-magento-2",
   "description": "OP Payment Service (previously known as Checkout Finland) is a payment gateway that offers 20+ payment methods for Finnish customers.",
   "authors": [
     {
@@ -7,10 +7,16 @@
       "email": "magentoservices@solteq.com",
       "homepage": "http://github.com/solteq",
       "role": "Developer"
+    },
+    {
+      "name": "Joonas Loueranta",
+      "email": "joonas.loueranta@op.fi",
+      "homepage": "https://github.com/loueranta",
+      "role": "Manager"
     }
   ],
   "type": "magento2-module",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "MIT",
   "autoload": {
     "files": [
