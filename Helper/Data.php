@@ -14,9 +14,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $methodCodes = [\Op\Checkout\Model\ConfigProvider::CODE];
 
+    const PAYMENT_TITLE = 'payment/opcheckout/title';
     const MERCHANT_SECRET_PATH = 'payment/opcheckout/merchant_secret';
     const MERCHANT_ID_PATH = 'payment/opcheckout/merchant_id';
     const DEBUG_LOG = 'payment/opcheckout/debuglog';
+    const RESPONSE_LOG = 'payment/opcheckout/response_log';
+    const REQUEST_LOG = 'payment/opcheckout/request_log';
     const DEFAULT_ORDER_STATUS = 'payment/opcheckout/order_status';
     const NOTIFICATION_EMAIL = 'payment/opcheckout/recipient_email';
     const BYPASS_PATH = 'Op_Checkout/payment/checkout-bypass';
@@ -53,6 +56,22 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getDebugLoggerStatus()
     {
         return $this->getConfig(self::DEBUG_LOG);
+    }
+
+    public function getTitle()
+    {
+        return $this->getConfig(self::PAYMENT_TITLE);
+    }
+
+    public function getResponseLog()
+    {
+        return $this->getConfig(self::RESPONSE_LOG);
+    }
+
+    public function getRequestLog()
+    {
+        return $this->getConfig(self::REQUEST_LOG);
+
     }
 
     public function getMerchantId()

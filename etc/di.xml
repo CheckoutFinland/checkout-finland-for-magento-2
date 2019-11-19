@@ -82,5 +82,32 @@
     </arguments>
   </virtualType>
 
+  <type name="Op\Checkout\Logger\Request\Request">
+    <arguments>
+      <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+    </arguments>
+  </type>
+  <type name="Op\Checkout\Logger\Request\Logger">
+    <arguments>
+      <argument name="name" xsi:type="string">Op Request Logger</argument>
+      <argument name="handlers"  xsi:type="array">
+        <item name="debug" xsi:type="object">Op\Checkout\Logger\Request\Request</item>
+      </argument>
+    </arguments>
+  </type>
+
+  <type name="Op\Checkout\Logger\Response\Response">
+    <arguments>
+      <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+    </arguments>
+  </type>
+  <type name="Op\Checkout\Logger\Response\Logger">
+    <arguments>
+      <argument name="name" xsi:type="string">Op Response Logger</argument>
+      <argument name="handlers"  xsi:type="array">
+        <item name="debug" xsi:type="object">Op\Checkout\Logger\Response\Response</item>
+      </argument>
+    </arguments>
+  </type>
 
 </config>

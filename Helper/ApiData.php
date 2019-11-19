@@ -1,4 +1,5 @@
 <?php
+
 namespace Op\Checkout\Helper;
 
 use Magento\Config\Model\ResourceModel\Config;
@@ -8,8 +9,11 @@ use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\UrlInterface;
 use Magento\Tax\Helper\Data as TaxHelper;
 use Magento\Directory\Api\CountryInformationAcquirerInterface;
+use Magento\Sales\Model\Order;
+use Op\Checkout\Logger\Request\Logger as RequestLogger;
+use Op\Checkout\Logger\Response\Logger as ResponseLogger;
+use Op\Checkout\Helper\Data as CheckoutHelper;
 use Psr\Log\LoggerInterface;
-use Op\Checkout\Helper\Data as DataHelper;
 
 class ApiData
 {
@@ -17,6 +21,24 @@ class ApiData
      * @var string API_ENDPOINT
      */
     const API_ENDPOINT = 'https://api.checkout.fi';
+
+
+    /**
+     * @var Order
+     */
+    private $order;
+    /**
+     * @var RequestLogger
+     */
+    private $requestLogger;
+    /**
+     * @var ResponseLogger
+     */
+    private $responseLogger;
+    /**
+     * @var CheckoutHelper
+     */
+    private $helper;
 
     /**
      * @var string MODULE_CODE
@@ -69,11 +91,6 @@ class ApiData
     private $moduleList;
 
     /**
-     * @var DataHelper
-     */
-    private $dataHelper;
-
-    /**
      * ApiData constructor.
      * @param LoggerInterface $log
      * @param Signature $signature
@@ -82,9 +99,12 @@ class ApiData
      * @param Json $json
      * @param CountryInformationAcquirerInterface $countryInformationAcquirer
      * @param TaxHelper $taxHelper
+     * @param Order $order
+     * @param RequestLogger $requestLogger
+     * @param ResponseLogger $responseLogger
+     * @param CheckoutHelper $helper
      * @param Config $resourceConfig
      * @param ModuleListInterface $moduleList
-     * @param DataHelper $dataHelper
      */
     public function __construct(
         LoggerInterface $log,
@@ -94,31 +114,36 @@ class ApiData
         Json $json,
         CountryInformationAcquirerInterface $countryInformationAcquirer,
         TaxHelper $taxHelper,
+        Order $order,
+        RequestLogger $requestLogger,
+        ResponseLogger $responseLogger,
+        CheckoutHelper $helper,
         Config $resourceConfig,
-        ModuleListInterface $moduleList,
-        DataHelper $dataHelper
-    ) {
+        ModuleListInterface $moduleList
+    ){
         $this->log = $log;
         $this->signature = $signature;
         $this->urlBuilder = $urlBuilder;
         $this->request = $request;
         $this->json = $json;
         $this->countryInfo = $countryInformationAcquirer;
-        $this->taxHelper = $taxHelper;
+        $this->order = $order;
+        $this->requestLogger = $requestLogger;
+        $this->responseLogger = $responseLogger;
+        $this->helper = $helper;
         $this->resourceConfig = $resourceConfig;
         $this->moduleList = $moduleList;
-        $this->dataHelper = $dataHelper;
     }
 
     /**
      * @param $uri
-     * @param $order
+     * @param Order $order
      * @param $merchantId
      * @param $merchantSecret
      * @param $method
      * @param null $refundId
      * @param null $refundBody
-     * @return array|null
+     * @return array|\Psr\Http\Message\ResponseInterface|null
      */
     public function getResponse(
         $uri,
@@ -128,13 +153,21 @@ class ApiData
         $method,
         $refundId = null,
         $refundBody = null
-    ) {
+    )
+    {
         $method = strtoupper($method);
         $headers = $this->getResponseHeaders($merchantId, $method);
         $body = '';
 
+        // Initialize checkout log variables
+        $responseLogEnabled = $this->helper->getResponseLog();
+        $requestLogEnabled = $this->helper->getRequestLog();
+
         if ($method == 'POST' && !empty($order)) {
             $body = $this->getResponseBody($order);
+            if ($requestLogEnabled) {
+                $this->requestLogger->debug('Request to Checkout Api. Order Id: ' . $order->getId() . ', Headers: ' . json_encode($headers));
+            }
         }
 
         if ($refundId) {
@@ -147,20 +180,21 @@ class ApiData
         $client = new \GuzzleHttp\Client(['headers' => $headers]);
         $response = null;
 
-
         try {
             if ($method == 'POST') {
                 $response = $client->post(self::API_ENDPOINT . $uri, ['body' => $body]);
+                if ($responseLogEnabled) {
+                    $this->responseLogger->debug('Getting reponse from Checkout Api. Order Id: ' . $order->getId() . ', Checkout timestamp: ' . $headers['checkout-timestamp']);
+                }
             } else {
                 $response = $client->get(self::API_ENDPOINT . $uri, ['body' => '']);
             }
-
-            // FIXME: response log
-            //$this->log->debug('test');
-            //$this->log->debug(json_encode($response->getBody()->getContents()));
         } catch (\GuzzleHttp\Exception\RequestException $e) {
             // TODO: should we check here for the error code ?
             if ($e->hasResponse()) {
+                if ($responseLogEnabled) {
+                    $this->responseLogger->debug('Connection error to Checkout API: ' . $e->getMessage());
+                }
                 $this->log->critical('Connection error to Checkout API: ' . $e->getMessage());
                 $response["data"] = $e->getMessage();
                 $response["status"] = $e->getCode();
@@ -176,6 +210,19 @@ class ApiData
 
         $responseHmac = $this->signature->calculateHmac($responseHeaders, $responseBody, $merchantSecret);
         $responseSignature = $response->getHeader('signature')[0];
+
+        // No logging when entering checkout page
+        if ($method == 'POST' && $responseLogEnabled) {
+            // Gather and log relevant data
+            $encodedBody = json_decode($responseBody, true);
+            $loggedData = json_encode(
+                [
+                    'transactionId' => $encodedBody['transactionId'],
+                    'href' => $encodedBody['href']
+                ],
+                JSON_UNESCAPED_SLASHES);
+            $this->responseLogger->debug('Response data for Order Id ' . $order->getId() . ': ' . $loggedData . ', ' . $responseHeaders['Date']);
+        }
 
         if ($responseHmac == $responseSignature) {
             $data = array(
@@ -205,9 +252,10 @@ class ApiData
         ];
     }
 
+
     /**
-     * @param $order
-     * @return string
+     * @param Order $order
+     * @return false|string
      */
     protected function getResponseBody($order)
     {
@@ -243,10 +291,9 @@ class ApiData
             JSON_UNESCAPED_SLASHES
         );
 
-        if ($this->dataHelper->getDebugLoggerStatus()) {
+        if ($this->helper->getDebugLoggerStatus()) {
             $this->log->debug($body);
         }
-
 
         return $body;
     }
@@ -390,7 +437,7 @@ class ApiData
             }
 
             $items[] = array(
-                'title' => (string) $discountLabel,
+                'title' => (string)$discountLabel,
                 'code' => '',
                 'amount' => -1,
                 'price' => floatval($discountData->getDiscountInclTax()),
@@ -424,14 +471,14 @@ class ApiData
         }
 
         // Get shipping tax rate
-        if ((float) $order->getShippingInclTax() && (float) $order->getShippingAmount()) {
+        if ((float)$order->getShippingInclTax() && (float)$order->getShippingAmount()) {
             $shippingTaxRate = $order->getShippingInclTax() / $order->getShippingAmount();
         } else {
             $shippingTaxRate = 1;
         }
 
         // Add / exclude shipping tax
-        $shippingDiscount = (float) $order->getShippingDiscountAmount();
+        $shippingDiscount = (float)$order->getShippingDiscountAmount();
         if (!$this->taxHelper->priceIncludesTax()) {
             $discountIncl += $shippingDiscount * $shippingTaxRate;
             $discountExcl += $shippingDiscount;
