@@ -106,6 +106,7 @@ class ActivateOrder
     {
         $transactionId = false;
         $paymentId =  $order->getPayment()->getId();
+        /* For backwards compatibility, e.g. Magento 2.2.9 requires 3 parameters. */
         $transaction = $this->transactionRepository->getByTransactionType('capture', $paymentId, $order->getId());
         if ($transaction) {
             $transactionId = $transaction->getTransactionId();

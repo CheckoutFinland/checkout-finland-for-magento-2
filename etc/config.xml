@@ -3,12 +3,11 @@
   <default>
     <payment>
       <opcheckout>
-        <title>Op Checkout</title>
+        <title>Op Payment Service</title>
         <model>OpCheckoutAdapter</model>
         <order_status>processing</order_status>
         <payment_action>authorize_capture</payment_action>
         <active>0</active>
-        <title>Op Payment Service</title>
         <is_gateway>0</is_gateway>
         <merchant_id></merchant_id>
         <merchant_secret></merchant_secret>
