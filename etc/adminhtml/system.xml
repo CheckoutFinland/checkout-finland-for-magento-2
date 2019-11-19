@@ -8,6 +8,9 @@
                     <label>Enabled</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="title" translate="label" type="text" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Title</label>
+                </field>
                 <field id="debuglog" translate="label" type="select" sortOrder="10" showInDefault="1">
                     <label>Debug Log</label>
                     <source_model>Magento\Config\Model\Config\Source\Enabledisable</source_model>
@@ -38,6 +41,16 @@
                     <label>Payment from Specific Countries</label>
                     <source_model>Magento\Directory\Model\Config\Source\Country</source_model>
                     <can_be_empty>1</can_be_empty>
+                </field>
+                <field id="response_log" translate="label" type="select" sortOrder="52" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
+                    <label>Enable Checkout response logging</label>
+                    <comment>Log file: var/log/checkout_response.log</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="request_log" translate="label" type="select" sortOrder="53" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
+                    <label>Enable Checkout request logging</label>
+                    <comment>Log file: var/log/checkout_request.log</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>
         </section>

@@ -5,6 +5,7 @@
                class="radio"
                data-bind="attr: {'id': getCode()}, value: getCode(), checked: isChecked, click: selectPaymentMethod, visible: isRadioButtonVisible()"/>
         <label data-bind="attr: {'for': getCode()}" class="label">
+            <span data-bind="text: getTitle()"></span>
             <div class="checkout-logo">
                 <div class="checkout-logo-container">
                     <img src="https://cdn2.hubspot.net/hubfs/2610868/op-financial-group.svg" alt="OP Payment Service">
@@ -21,51 +22,51 @@
             <!-- ko template: getTemplate() --><!-- /ko -->
             <!--/ko-->
         </div>
-          <div class="checkout-agreements-block">
-              <!-- ko foreach: $parent.getRegion('before-place-order') -->
-                  <!-- ko template: getTemplate() --><!-- /ko -->
-              <!--/ko-->
-          </div>
-          <div class="checkout-payment-methods">
-          <!-- ko foreach:  { data: getMethodGroups(), as: 'methodGroup' } -->
+        <div class="checkout-agreements-block">
+            <!-- ko foreach: $parent.getRegion('before-place-order') -->
+            <!-- ko template: getTemplate() --><!-- /ko -->
+            <!--/ko-->
+        </div>
+        <div class="checkout-payment-methods">
+            <!-- ko foreach:  { data: getMethodGroups(), as: 'methodGroup' } -->
             <div>
                 <div class="checkout-group-title">
                     <span data-bind="text: title"></span>
                 </div>
-              <!-- ko foreach: methodGroup['methods'], as: 'paymentMethod' -->
+                <!-- ko foreach: methodGroup['methods'], as: 'paymentMethod' -->
                 <div class="checkout-payment-method" data-bind="
                   attr: {id: 'checkout-payment-method-' + id},
                   css: { active: $parents[1].selectedPaymentMethodId() == id },
                   click: $parents[1].setPaymentMethodId
                   "
                 >
-                  <div class="checkout-payment-method-logo">
-                      <img data-bind="attr: { src: icon }">
-                  </div>
-                  <div class="checkout-payment-method-title" data-bind="text: title"></div>
-                  <div>
-                    <input type="radio" data-bind="attr: {value: id}, checked: $parents[1].selectedPaymentMethodId" />
-                  </div>
+                    <div class="checkout-payment-method-logo">
+                        <img data-bind="attr: { src: icon }">
+                    </div>
+                    <div class="checkout-payment-method-title" data-bind="text: title"></div>
+                    <div>
+                        <input type="radio" data-bind="attr: {value: id}, checked: $parents[1].selectedPaymentMethodId" />
+                    </div>
                 </div>
-              <!--/ko-->
+                <!--/ko-->
             </div>
-          <!-- /ko -->
-          </div>
-          <div class="actions-toolbar">
-              <div class="primary">
-                  <button class="action primary checkout"
-                          type="submit"
-                          data-bind="
+            <!-- /ko -->
+        </div>
+        <div class="actions-toolbar">
+            <div class="primary">
+                <button class="action primary checkout"
+                        type="submit"
+                        data-bind="
                         click: placeOrder,
                         attr: {title: $t('Place Order')},
                         css: {disabled: !isPlaceOrderActionAllowed()},
                         enable: (getCode() == isChecked())
                         "
-                          disabled>
-                      <span data-bind="i18n: 'Place Order'"></span>
-                  </button>
-              </div>
-          </div>
-          <div id="checkout-form-wrapper" style="display:none;"></div>
-      </div>
-  </div>
+                        disabled>
+                    <span data-bind="i18n: 'Place Order'"></span>
+                </button>
+            </div>
+        </div>
+        <div id="checkout-form-wrapper" style="display:none;"></div>
+    </div>
+</div>

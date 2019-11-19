@@ -106,7 +106,7 @@ class ActivateOrder
     {
         $transactionId = false;
         $paymentId =  $order->getPayment()->getId();
-        $transaction = $this->transactionRepository->getByTransactionType('capture', $paymentId);
+        $transaction = $this->transactionRepository->getByTransactionType('capture', $paymentId, $order->getId());
         if ($transaction) {
             $transactionId = $transaction->getTransactionId();
         }
