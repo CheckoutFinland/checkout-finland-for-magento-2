@@ -43,13 +43,13 @@
                     <can_be_empty>1</can_be_empty>
                 </field>
                 <field id="response_log" translate="label" type="select" sortOrder="52" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
-                    <label>Enable Checkout response logging</label>
-                    <comment>Log file: var/log/checkout_response.log</comment>
+                    <label>Enable OP Payment Service response logging</label>
+                    <comment>Log file: var/log/op_payment_service_response.log</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="request_log" translate="label" type="select" sortOrder="53" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
-                    <label>Enable Checkout request logging</label>
-                    <comment>Log file: var/log/checkout_request.log</comment>
+                    <label>Enable OP Payment Service request logging</label>
+                    <comment>Log file: var/log/op_payment_service_request.log</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>
