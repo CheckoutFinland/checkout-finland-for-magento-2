@@ -304,7 +304,7 @@ class ApiData
      */
     protected function formatAddress($address)
     {
-        $country = $this->countryInfo->getCountryInfo($address->getCountryId())->getFullNameLocale();
+        $country = $this->countryInfo->getCountryInfo($address->getCountryId())->getTwoLetterAbbreviation();
         $streetAddressRows = $address->getStreet();
         $streetAddress = $streetAddressRows[0];
         if (mb_strlen($streetAddress, 'utf-8') > 50) {
