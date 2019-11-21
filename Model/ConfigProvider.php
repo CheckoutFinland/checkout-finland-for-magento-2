@@ -3,9 +3,12 @@
 namespace Op\Checkout\Model;
 
 use Magento\Checkout\Model\ConfigProviderInterface;
-use Op\Checkout\Helper\Data as opHelper;
-use Op\Checkout\Helper\ApiData as apiData;
+use Magento\Checkout\Model\Session;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Payment\Helper\Data as PaymentHelper;
+use Op\Checkout\Helper\ApiData as apiData;
+use Op\Checkout\Helper\Data as opHelper;
 
 class ConfigProvider implements ConfigProviderInterface
 {
@@ -17,15 +20,20 @@ class ConfigProvider implements ConfigProviderInterface
     protected $ophelper;
     protected $apidata;
 
+    /**
+     * @var Session
+     */
+    protected $checkoutSession;
 
     public function __construct(
         opHelper $ophelper,
         apiData $apidata,
-        PaymentHelper $paymentHelper
+        PaymentHelper $paymentHelper,
+        Session $checkoutSession
     ) {
         $this->ophelper = $ophelper;
         $this->apidata = $apidata;
-
+        $this->checkoutSession  = $checkoutSession;
 
         foreach ($this->methodCodes as $code) {
             $this->methods[$code] = $paymentHelper->getMethodInstance($code);
@@ -49,8 +57,16 @@ class ConfigProvider implements ConfigProviderInterface
         return 'opcheckout/redirect';
     }
 
-    protected function getAllPaymentMethods($orderValue = 25)
+    /**
+     * Get all payment methods with order total value
+     *
+     * @return mixed
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
+     */
+    protected function getAllPaymentMethods()
     {
+        $orderValue = $this->checkoutSession->getQuote()->getGrandTotal();
         $uri = '/merchants/payment-providers?amount=' . $orderValue * 100;
         $merchantId = $this->ophelper->getMerchantId();
         $merchantSecret = $this->ophelper->getMerchantSecret();
@@ -76,8 +92,7 @@ class ConfigProvider implements ConfigProviderInterface
         }
 
         return $this->addMethodsToGroups($groups, $responseData);
-}
-
+    }
 
     protected function addMethodsToGroups($groups, $responseData)
     {
