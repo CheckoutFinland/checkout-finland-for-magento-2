@@ -166,7 +166,7 @@ class ApiData
         if ($method == 'POST' && !empty($order)) {
             $body = $this->getResponseBody($order);
             if ($requestLogEnabled) {
-                $this->requestLogger->debug('Request to Checkout Api. Order Id: ' . $order->getId() . ', Headers: ' . json_encode($headers));
+                $this->requestLogger->debug('Request to OP Payment Service API. Order Id: ' . $order->getId() . ', Headers: ' . json_encode($headers));
             }
         }
 
@@ -184,7 +184,7 @@ class ApiData
             if ($method == 'POST') {
                 $response = $client->post(self::API_ENDPOINT . $uri, ['body' => $body]);
                 if ($responseLogEnabled) {
-                    $this->responseLogger->debug('Getting reponse from Checkout Api. Order Id: ' . $order->getId() . ', Checkout timestamp: ' . $headers['checkout-timestamp']);
+                    $this->responseLogger->debug('Getting response from OP Payment Service API. Order Id: ' . $order->getId() . ', Checkout timestamp: ' . $headers['checkout-timestamp']);
                 }
             } else {
                 $response = $client->get(self::API_ENDPOINT . $uri, ['body' => '']);
@@ -193,9 +193,9 @@ class ApiData
             // TODO: should we check here for the error code ?
             if ($e->hasResponse()) {
                 if ($responseLogEnabled) {
-                    $this->responseLogger->debug('Connection error to Checkout API: ' . $e->getMessage());
+                    $this->responseLogger->debug('Connection error to OP Payment Service API: ' . $e->getMessage());
                 }
-                $this->log->critical('Connection error to Checkout API: ' . $e->getMessage());
+                $this->log->critical('Connection error to OP Payment Service API: ' . $e->getMessage());
                 $response["data"] = $e->getMessage();
                 $response["status"] = $e->getCode();
             }
@@ -304,7 +304,7 @@ class ApiData
      */
     protected function formatAddress($address)
     {
-        $country = $this->countryInfo->getCountryInfo($address->getCountryId())->getFullNameLocale();
+        $country = $this->countryInfo->getCountryInfo($address->getCountryId())->getTwoLetterAbbreviation();
         $streetAddressRows = $address->getStreet();
         $streetAddress = $streetAddressRows[0];
         if (mb_strlen($streetAddress, 'utf-8') > 50) {

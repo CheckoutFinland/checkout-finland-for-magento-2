@@ -16,5 +16,5 @@ class Response extends \Magento\Framework\Logger\Handler\Base
      * File name
      * @var string
      */
-    protected $fileName = 'var/log/checkout_response.log';
+    protected $fileName = 'var/log/op_payment_service_response.log';
 }

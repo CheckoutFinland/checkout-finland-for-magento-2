@@ -16,5 +16,5 @@ class Request extends \Magento\Framework\Logger\Handler\Base
      * File name
      * @var string
      */
-    protected $fileName = 'var/log/checkout_request.log';
+    protected $fileName = 'var/log/op_payment_service_request.log';
 }
