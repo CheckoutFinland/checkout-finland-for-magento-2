@@ -13,14 +13,26 @@ use Psr\Log\LoggerInterface;
 class CartControllerPlugin
 {
 
+    /**
+     * @var RedirectInterface
+     */
     protected $redirect;
-
+    /**
+     * @var Http
+     */
     protected $response;
-
+    /**
+     * @var ManagerInterface
+     */
     protected $messageManager;
-
+    /**
+     * @var CheckoutHelper
+     */
     protected $helper;
 
+    /**
+     * @var ResultFactory
+     */
     protected $resultFactory;
     /**
      * @var LoggerInterface
