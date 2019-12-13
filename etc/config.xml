@@ -22,7 +22,7 @@
         <can_refund_partial_per_invoice>1</can_refund_partial_per_invoice>
         <response_log>0</response_log>
         <request_log>0</request_log>
-        <logo>https://cdn2.hubspot.net/hubfs/2610868/op-financial-group.svg</logo>
+        <logo>https://cdn2.hubspot.net/hubfs/2610868/Logot/op-logo-30x30px.png</logo>
       </opcheckout>
     </payment>
   </default>
