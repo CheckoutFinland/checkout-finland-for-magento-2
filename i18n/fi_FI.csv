@@ -70,4 +70,4 @@ Shipping,Toimitus
 "Are you sure you want to make changes to this order?", "Haluatko varmasti tehdä muutoksia tähän tilaukseen?"
 "Pending payment from OP Payment Service","Odottaa maksua OP Payment Servicestä"
 "Order canceled. Failed to redirect to OP Payment Service.","Tilaus peruutettu. Ohjausta OP Payment Serviceen ei voitu tehdä"
-"Op Payment Service API credentials are missing. Please contact support.","Op Payment Service tunnuksia ei löytynyt. Ole hyvä, ja ota yhteyttä asiakaspalveluun."
+"Op Payment Service API credentials are incorrect. Please contact support.","Op Payment Service tunnuksia ei löytynyt. Ole hyvä, ja ota yhteyttä asiakaspalveluun."

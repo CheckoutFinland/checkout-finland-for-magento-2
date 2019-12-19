@@ -109,10 +109,4 @@
       </argument>
     </arguments>
   </type>
-  <type name="Magento\Checkout\Controller\Index\Index">
-    <plugin name="checkout_merchant_key_validator" type="Op\Checkout\Plugin\Controller\CheckoutControllerPlugin" />
-  </type>
-  <type name="Magento\Checkout\Controller\Cart\Index">
-    <plugin name="cart_merchant_key_validator" type="Op\Checkout\Plugin\Controller\CartControllerPlugin" />
-  </type>
 </config>

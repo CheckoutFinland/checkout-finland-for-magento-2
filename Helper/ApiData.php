@@ -13,6 +13,7 @@ use Magento\Sales\Model\Order;
 use Op\Checkout\Logger\Request\Logger as RequestLogger;
 use Op\Checkout\Logger\Response\Logger as ResponseLogger;
 use Op\Checkout\Helper\Data as CheckoutHelper;
+use Op\Checkout\Model\CheckoutException;
 use Psr\Log\LoggerInterface;
 
 class ApiData
@@ -143,6 +144,7 @@ class ApiData
      * @param $method
      * @param null $refundId
      * @param null $refundBody
+     * @throws CheckoutException
      * @return array|\Psr\Http\Message\ResponseInterface|null
      */
     public function getResponse(
@@ -199,7 +201,7 @@ class ApiData
                 $response["data"] = $e->getMessage();
                 $response["status"] = $e->getCode();
             }
-            return $response;
+            throw new CheckoutException(__('Connection error to OP Payment Service API'));
         }
 
         $responseBody = $response->getBody()->getContents();
