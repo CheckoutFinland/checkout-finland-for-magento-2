@@ -127,6 +127,7 @@ class ApiData
         $this->request = $request;
         $this->json = $json;
         $this->countryInfo = $countryInformationAcquirer;
+        $this->taxHelper = $taxHelper;
         $this->order = $order;
         $this->requestLogger = $requestLogger;
         $this->responseLogger = $responseLogger;
