@@ -200,8 +200,8 @@ class ApiData
                 $this->log->critical('Connection error to OP Payment Service API: ' . $e->getMessage());
                 $response["data"] = $e->getMessage();
                 $response["status"] = $e->getCode();
-                throw new CheckoutException(__('Connection error to OP Payment Service API'));
             }
+            throw new CheckoutException(__('Connection error to OP Payment Service API'));
         }
 
         $responseBody = $response->getBody()->getContents();
