@@ -36,7 +36,7 @@ define(
                 self = this;
                 this._super();
                 if (!self.getIsSuccess()){
-                    self.addErrorMessage($t('Op Payment Service API credentials are missing. Please contact support.'));
+                    self.addErrorMessage($t('Op Payment Service API credentials are incorrect. Please contact support.'));
                 }
                 if (this.getPaymentPageBypass()) {
                     this.initPaymentPageBypass();
