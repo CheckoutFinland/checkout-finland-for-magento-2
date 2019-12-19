@@ -14,6 +14,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $methodCodes = [\Op\Checkout\Model\ConfigProvider::CODE];
 
+    const METHOD_ACTIVE = 'payment/opcheckout/active';
     const PAYMENT_TITLE = 'payment/opcheckout/title';
     const MERCHANT_SECRET_PATH = 'payment/opcheckout/merchant_secret';
     const MERCHANT_ID_PATH = 'payment/opcheckout/merchant_id';
@@ -46,6 +47,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $config_path,
             \Magento\Store\Model\ScopeInterface::SCOPE_STORE
         );
+    }
+
+    public function getMethodStatus()
+    {
+        return $this->getConfig(self::METHOD_ACTIVE);
     }
 
     public function getDefaultOrderStatus()

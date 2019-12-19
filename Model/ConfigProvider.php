@@ -30,10 +30,11 @@ class ConfigProvider implements ConfigProviderInterface
         apiData $apidata,
         PaymentHelper $paymentHelper,
         Session $checkoutSession
-    ) {
+    )
+    {
         $this->ophelper = $ophelper;
         $this->apidata = $apidata;
-        $this->checkoutSession  = $checkoutSession;
+        $this->checkoutSession = $checkoutSession;
 
         foreach ($this->methodCodes as $code) {
             $this->methods[$code] = $paymentHelper->getMethodInstance($code);
@@ -43,12 +44,21 @@ class ConfigProvider implements ConfigProviderInterface
     public function getConfig()
     {
         $config = [];
-        $config['payment']['instructions'][self::CODE] = $this->ophelper->getInstructions(self::CODE);
-        $config['payment']['use_bypass'][self::CODE] = true;
-        $config['payment']['method_groups'][self::CODE] = $this->getEnabledPaymentMethodGroups();
-        $config['payment']['payment_redirect_url'][self::CODE] = $this->getPaymentRedirectUrl();
-        $config['payment']['payment_template'][self::CODE] = $this->ophelper->getPaymentTemplate();
-
+        $status = $this->ophelper->getMethodStatus();
+        if (!$status) {
+            return $config;
+        }
+        try {
+            $config['payment']['instructions'][self::CODE] = $this->ophelper->getInstructions(self::CODE);
+            $config['payment']['use_bypass'][self::CODE] = true;
+            $config['payment']['payment_redirect_url'][self::CODE] = $this->getPaymentRedirectUrl();
+            $config['payment']['payment_template'][self::CODE] = $this->ophelper->getPaymentTemplate();
+            $config['payment']['method_groups'][self::CODE] = $this->getEnabledPaymentMethodGroups();
+        } catch (CheckoutException $e) {
+            $config['payment']['success'][self::CODE] = 0;
+            return $config;
+        }
+        $config['payment']['success'][self::CODE] = 1;
         return $config;
     }
 
@@ -129,7 +139,7 @@ class ConfigProvider implements ConfigProviderInterface
                     'id' => $method['value'] . $i++,
                     'title' => $method['label'],
                     'group' => $method['group'],
-                    'icon'  => $method['icon']
+                    'icon' => $method['icon']
                 ];
             }
         }
