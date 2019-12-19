@@ -34,9 +34,10 @@ define(
 
             initialize: function () {
                 self = this;
-
                 this._super();
-
+                if (!self.getIsSuccess()){
+                    self.addErrorMessage($t('Op Payment Service API credentials are missing. Please contact support.'));
+                }
                 if (this.getPaymentPageBypass()) {
                     this.initPaymentPageBypass();
 
@@ -77,6 +78,10 @@ define(
 
             getInstructions: function () {
                 return window.checkoutConfig.payment.instructions[this.item.method];
+            },
+
+            getIsSuccess: function () {
+                return window.checkoutConfig.payment.success.opcheckout;
             },
 
             getPaymentPageBypass: function () {
