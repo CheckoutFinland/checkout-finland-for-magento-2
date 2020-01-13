@@ -263,36 +263,38 @@ class ApiData
     protected function getResponseBody($order)
     {
         $billingAddress = $order->getBillingAddress();
+
+        $bodyData = [
+            'stamp' => hash('sha256', time() . $order->getIncrementId()),
+            'reference' => $order->getIncrementId(),
+            'amount' => $order->getGrandTotal() * 100,
+            'currency' => $order->getOrderCurrencyCode(),
+            'language' => 'FI',
+            'items' => $this->getOrderItems($order),
+            'customer' => [
+                'firstName' => $billingAddress->getFirstName(),
+                'lastName' => $billingAddress->getLastName(),
+                'phone' => $billingAddress->getTelephone(),
+                'email' => $billingAddress->getEmail(),
+            ],
+            'invoicingAddress' => $this->formatAddress($billingAddress),
+            'redirectUrls' => [
+                'success' => $this->getReceiptUrl(),
+                'cancel' => $this->getReceiptUrl(),
+            ],
+            'callbackUrls' => [
+                'success' => $this->getReceiptUrl(),
+                'cancel' => $this->getReceiptUrl(),
+            ],
+        ];
+
         $shippingAddress = $order->getShippingAddress();
+        if (!is_null($shippingAddress)) {
+            $bodyData['deliveryAddress'] = $this->formatAddress($shippingAddress);
+        }
 
         // using json_encode for option.
-        $body = json_encode(
-            [
-                'stamp' => hash('sha256', time() . $order->getIncrementId()),
-                'reference' => $order->getIncrementId(),
-                'amount' => $order->getGrandTotal() * 100,
-                'currency' => $order->getOrderCurrencyCode(),
-                'language' => 'FI',
-                'items' => $this->getOrderItems($order),
-                'customer' => [
-                    'firstName' => $billingAddress->getFirstName(),
-                    'lastName' => $billingAddress->getLastName(),
-                    'phone' => $billingAddress->getTelephone(),
-                    'email' => $billingAddress->getEmail(),
-                ],
-                'invoicingAddress' => $this->formatAddress($billingAddress),
-                'deliveryAddress' => $this->formatAddress($shippingAddress),
-                'redirectUrls' => [
-                    'success' => $this->getReceiptUrl(),
-                    'cancel' => $this->getReceiptUrl(),
-                ],
-                'callbackUrls' => [
-                    'success' => $this->getReceiptUrl(),
-                    'cancel' => $this->getReceiptUrl(),
-                ],
-            ],
-            JSON_UNESCAPED_SLASHES
-        );
+        $body = json_encode($bodyData, JSON_UNESCAPED_SLASHES);
 
         if ($this->helper->getDebugLoggerStatus()) {
             $this->log->debug($body);
