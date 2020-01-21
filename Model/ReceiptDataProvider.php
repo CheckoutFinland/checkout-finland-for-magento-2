@@ -55,6 +55,9 @@ class ReceiptDataProvider
      */
     protected $orderInterface;
 
+    /**
+     * @var /Magento/Sales/Model/Order
+     */
     protected $currentOrder;
     protected $currentOrderPayment;
     protected $orderId;
@@ -62,13 +65,40 @@ class ReceiptDataProvider
     protected $transactionId;
     protected $paramsStamp;
     protected $paramsMethod;
+    /**
+     * @var \Magento\Framework\Api\SearchCriteriaBuilder
+     */
+    private $searchCriteriaBuilder;
 
 
+    /**
+     * ReceiptDataProvider constructor.
+     * @param \Magento\Framework\App\Action\Context $context
+     * @param \Magento\Checkout\Model\Session $session
+     * @param \Magento\Sales\Api\TransactionRepositoryInterface $transactionRepository
+     * @param \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender
+     * @param \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param TransportBuilder $transportBuilder
+     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param OrderManagementInterface $orderManagementInterface
+     * @param ResponseValidator $responseValidator
+     * @param OrderRepositoryInterface $orderRepositoryInterface
+     * @param transactionBuilderInterface $transactionBuilderInterface
+     * @param opCapture $opCapture
+     * @param Signature $signature
+     * @param InvoiceService $invoiceService
+     * @param OrderStatusHistoryRepositoryInterface $orderStatusHistoryRepository
+     * @param TransactionFactory $transactionFactory
+     * @param opHelper $opHelper
+     * @param OrderInterface $orderInterface
+     * @param transactionBuilder $transactionBuilder
+     */
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Magento\Checkout\Model\Session $session,
         \Magento\Sales\Api\TransactionRepositoryInterface $transactionRepository,
         \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender,
+        \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder,
         TransportBuilder $transportBuilder,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         OrderManagementInterface $orderManagementInterface,
@@ -103,6 +133,7 @@ class ReceiptDataProvider
         $this->opHelper = $opHelper;
         $this->context = $context;
         $this->orderInterface = $orderInterface;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
     }
 
     /* TODO: MOST OF THE LOGIC GOES HERE! */
@@ -118,8 +149,21 @@ class ReceiptDataProvider
         $this->session->unsCheckoutRedirectUrl();
 
         $this->currentOrder = $this->loadOrder();
+
+        $this->searchCriteriaBuilder->addFilter('txn_id', $this->transactionId);
+
+        /** @var \Magento\Sales\Api\Data\TransactionInterface[] $conflictingTransactions */
+        $conflictingTransactions = $this->transactionRepository->getList(
+            $this->searchCriteriaBuilder->create()
+        )->getItems();
+
+        if (sizeof($conflictingTransactions) > 0) { //handling multiple calls with the same transaction id
+            return;
+        }
+
         $this->orderId = $this->currentOrder->getId();
         $this->currentOrderPayment = $this->currentOrder->getPayment();
+
 
         $paymentVerified = $this->verifyPaymentData($params);
 
@@ -214,7 +258,7 @@ class ReceiptDataProvider
             'orderNo'   => $this->orderIncrementalId,
             'stamp'     => $this->paramsStamp,
             'method'    => $this->paramsMethod
-                ];
+        ];
     }
 
     protected function loadOrder()
