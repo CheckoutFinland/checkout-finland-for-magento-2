@@ -55,7 +55,9 @@ class Index extends \Magento\Framework\App\Action\Action
         }
 
         try {
-            $this->receiptDataProvider->execute($this->getRequest()->getParams());
+            if (!$this->receiptDataProvider->execute($this->getRequest()->getParams())) {
+                return; // avoiding conflict if a callback url is called and processed twice at the same time
+            }
         } catch (CheckoutException $exception) {
             $isValid = false;
             $failMessage = $exception->getMessage();

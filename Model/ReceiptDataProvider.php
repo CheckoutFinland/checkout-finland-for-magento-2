@@ -19,6 +19,8 @@ use Magento\Sales\Api\Data\OrderInterface;
 
 class ReceiptDataProvider
 {
+    const RECEIPT_PROCESSING_CACHE_PREFIX = "receipt_processing_";
+
     protected $urlBuilder;
     protected $session;
     protected $transactionRepository;
@@ -55,6 +57,9 @@ class ReceiptDataProvider
      */
     protected $orderInterface;
 
+    /**
+     * @var /Magento/Sales/Model/Order
+     */
     protected $currentOrder;
     protected $currentOrderPayment;
     protected $orderId;
@@ -62,19 +67,48 @@ class ReceiptDataProvider
     protected $transactionId;
     protected $paramsStamp;
     protected $paramsMethod;
+    /**
+     * @var \Magento\Framework\App\CacheInterface|Magento\Framework\App\CacheInterface
+     */
+    private $cache;
 
 
+    /**
+     * ReceiptDataProvider constructor.
+     * @param \Magento\Framework\App\Action\Context $context
+     * @param \Magento\Checkout\Model\Session $session
+     * @param \Magento\Sales\Api\TransactionRepositoryInterface $transactionRepository
+     * @param \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender
+
+     * @param TransportBuilder $transportBuilder
+     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param OrderManagementInterface $orderManagementInterface
+     * @param ResponseValidator $responseValidator
+     * @param OrderRepositoryInterface $orderRepositoryInterface
+     * @param transactionBuilderInterface $transactionBuilderInterface
+     * @param Magento\Framework\App\CacheInterface $cache
+     * @param opCapture $opCapture
+     * @param Signature $signature
+     * @param InvoiceService $invoiceService
+     * @param OrderStatusHistoryRepositoryInterface $orderStatusHistoryRepository
+     * @param TransactionFactory $transactionFactory
+     * @param opHelper $opHelper
+     * @param OrderInterface $orderInterface
+     * @param transactionBuilder $transactionBuilder
+     */
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Magento\Checkout\Model\Session $session,
         \Magento\Sales\Api\TransactionRepositoryInterface $transactionRepository,
         \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender,
+
         TransportBuilder $transportBuilder,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         OrderManagementInterface $orderManagementInterface,
         ResponseValidator $responseValidator,
         OrderRepositoryInterface $orderRepositoryInterface,
         transactionBuilderInterface $transactionBuilderInterface,
+        \Magento\Framework\App\CacheInterface $cache,
         opCapture $opCapture,
         Signature $signature,
         InvoiceService $invoiceService,
@@ -103,6 +137,7 @@ class ReceiptDataProvider
         $this->opHelper = $opHelper;
         $this->context = $context;
         $this->orderInterface = $orderInterface;
+        $this->cache = $cache;
     }
 
     /* TODO: MOST OF THE LOGIC GOES HERE! */
@@ -114,11 +149,17 @@ class ReceiptDataProvider
         $this->paramsStamp          =   $params['checkout-stamp'];
         $this->paramsMethod         =   $params['checkout-provider'];
 
-
         $this->session->unsCheckoutRedirectUrl();
 
         $this->currentOrder = $this->loadOrder();
         $this->orderId = $this->currentOrder->getId();
+
+        if ($this->isOrderLocked($this->orderId)) {
+            return false; // needs to be tested if it avoids collision when callback url is called twice at the same time
+        } else {
+            $this->lockProcessingOrder($this->orderId);
+        }
+
         $this->currentOrderPayment = $this->currentOrder->getPayment();
 
         $paymentVerified = $this->verifyPaymentData($params);
@@ -127,6 +168,43 @@ class ReceiptDataProvider
         $this->processPayment($paymentVerified);
         $this->processInvoice();
         $this->processOrder($paymentVerified);
+
+        $this->unlockProcessingOrder($this->orderId);
+
+        return true;
+    }
+
+    /**
+     * @param int $orderId
+     */
+    protected function lockProcessingOrder($orderId)
+    {
+        /** @var string $identifier */
+        $identifier = self::RECEIPT_PROCESSING_CACHE_PREFIX . $orderId;
+
+        $this->cache->save("locked", $identifier);
+    }
+
+    /**
+     * @param int $orderId
+     */
+    protected function unlockProcessingOrder($orderId)
+    {
+        /** @var string $identifier */
+        $identifier = self::RECEIPT_PROCESSING_CACHE_PREFIX . $orderId;
+
+        $this->cache->remove($identifier);
+    }
+
+    /**
+     * @param int $orderId
+     * @return bool
+     */
+    protected function isOrderLocked($orderId) {
+        /** @var string $identifier */
+        $identifier = self::RECEIPT_PROCESSING_CACHE_PREFIX . $orderId;
+
+        return $this->cache->load($identifier)?true:false;
     }
 
 
@@ -214,7 +292,7 @@ class ReceiptDataProvider
             'orderNo'   => $this->orderIncrementalId,
             'stamp'     => $this->paramsStamp,
             'method'    => $this->paramsMethod
-                ];
+        ];
     }
 
     protected function loadOrder()
