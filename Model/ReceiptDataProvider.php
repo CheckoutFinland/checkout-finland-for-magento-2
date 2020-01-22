@@ -155,7 +155,7 @@ class ReceiptDataProvider
         $this->orderId = $this->currentOrder->getId();
 
         if ($this->isOrderLocked($this->orderId)) {
-            return; // needs to be tested if it avoids collision when callback url is called twice at the same time
+            return false; // needs to be tested if it avoids collision when callback url is called twice at the same time
         } else {
             $this->lockProcessingOrder($this->orderId);
         }
@@ -170,6 +170,8 @@ class ReceiptDataProvider
         $this->processOrder($paymentVerified);
 
         $this->unlockProcessingOrder($this->orderId);
+
+        return true;
     }
 
     /**
