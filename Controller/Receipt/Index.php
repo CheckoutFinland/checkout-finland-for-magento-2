@@ -43,6 +43,7 @@ class Index extends \Magento\Framework\App\Action\Action
             }
             $this->session->restoreQuote();
             $this->_redirect('checkout/cart');
+
             return;
         }
 
@@ -51,11 +52,16 @@ class Index extends \Magento\Framework\App\Action\Action
             $this->session->restoreQuote();
             $this->messageManager->addErrorMessage(__('Order number is empty'));
             $this->_redirect('checkout/cart');
+
             return;
         }
 
         try {
-            $this->receiptDataProvider->execute($this->getRequest()->getParams());
+            if (!$this->receiptDataProvider->execute($this->getRequest()->getParams())) {
+                $this->_redirect('checkout/onepage/success'); // the second call, just in case the customer's call is the second one
+
+                return; // avoiding conflict if a callback url is called and processed twice at the same time
+            }
         } catch (CheckoutException $exception) {
             $isValid = false;
             $failMessage = $exception->getMessage();
@@ -73,6 +79,7 @@ class Index extends \Magento\Framework\App\Action\Action
             $this->quoteRepository->save($quote);
             $this->_redirect('checkout/onepage/success');
         }
+
         return;
     }
 }
