@@ -16,6 +16,9 @@ use Op\Checkout\Helper\Data as CheckoutHelper;
 use Op\Checkout\Model\CheckoutException;
 use Psr\Log\LoggerInterface;
 
+/**
+ * Class ApiData
+ */
 class ApiData
 {
     /**
@@ -23,19 +26,21 @@ class ApiData
      */
     const API_ENDPOINT = 'https://api.checkout.fi';
 
-
     /**
      * @var Order
      */
     private $order;
+
     /**
      * @var RequestLogger
      */
     private $requestLogger;
+
     /**
      * @var ResponseLogger
      */
     private $responseLogger;
+
     /**
      * @var CheckoutHelper
      */
@@ -121,7 +126,7 @@ class ApiData
         CheckoutHelper $helper,
         Config $resourceConfig,
         ModuleListInterface $moduleList
-    ){
+    ) {
         $this->log = $log;
         $this->signature = $signature;
         $this->urlBuilder = $urlBuilder;
@@ -156,8 +161,7 @@ class ApiData
         $method,
         $refundId = null,
         $refundBody = null
-    )
-    {
+    ) {
         $method = strtoupper($method);
         $headers = $this->getResponseHeaders($merchantId, $method);
         $body = '';
@@ -223,15 +227,16 @@ class ApiData
                     'transactionId' => $encodedBody['transactionId'],
                     'href' => $encodedBody['href']
                 ],
-                JSON_UNESCAPED_SLASHES);
+                JSON_UNESCAPED_SLASHES
+            );
             $this->responseLogger->debug('Response data for Order Id ' . $order->getId() . ': ' . $loggedData . ', ' . $responseHeaders['Date']);
         }
 
         if ($responseHmac == $responseSignature) {
-            $data = array(
+            $data = [
                 'status' => $response->getStatusCode(),
                 'data' => json_decode($responseBody)
-            );
+            ];
 
             return $data;
         }
@@ -245,7 +250,7 @@ class ApiData
     protected function getResponseHeaders($account, $method)
     {
         return [
-            'cof-plugin-version' => 'op-payment-service-for-magento-2-'.$this->getExtensionVersion(),
+            'cof-plugin-version' => 'op-payment-service-for-magento-2-' . $this->getExtensionVersion(),
             'checkout-account' => $account,
             'checkout-algorithm' => 'sha256',
             'checkout-method' => strtoupper($method),
@@ -254,7 +259,6 @@ class ApiData
             'content-type' => 'application/json; charset=utf-8',
         ];
     }
-
 
     /**
      * @param Order $order
@@ -330,6 +334,9 @@ class ApiData
         return $result;
     }
 
+    /**
+     * @return mixed
+     */
     protected function getReceiptUrl()
     {
         $receiptUrl = $this->urlBuilder->getUrl('opcheckout/receipt', [
@@ -338,7 +345,6 @@ class ApiData
 
         return $receiptUrl;
     }
-
 
     /**
      * @param $order
@@ -349,14 +355,14 @@ class ApiData
         $items = [];
 
         foreach ($this->itemArgs($order) as $i => $item) {
-            $items[] = array(
+            $items[] = [
                 'unitPrice' => $item['price'] * 100,
                 'units' => $item['amount'],
                 'vatPercentage' => $item['vat'],
                 'description' => $item['title'],
                 'productCode' => $item['code'],
                 'deliveryDate' => date('Y-m-d'),
-            );
+            ];
         }
 
         return $items;
@@ -368,7 +374,7 @@ class ApiData
      */
     protected function itemArgs($order)
     {
-        $items = array();
+        $items = [];
 
         # Add line items
         /** @var $item Item */
@@ -376,7 +382,7 @@ class ApiData
             // When in grouped or bundle product price is dynamic (product_calculations = 0)
             // then also the child products has prices so we set
             if ($item->getChildrenItems() && !$item->getProductOptions()['product_calculations']) {
-                $items[] = array(
+                $items[] = [
                     'title' => $item->getName(),
                     'code' => $item->getSku(),
                     'amount' => floatval($item->getQtyOrdered()),
@@ -384,9 +390,9 @@ class ApiData
                     'vat' => 0,
                     'discount' => 0,
                     'type' => 1,
-                );
+                ];
             } else {
-                $items[] = array(
+                $items[] = [
                     'title' => $item->getName(),
                     'code' => $item->getSku(),
                     'amount' => floatval($item->getQtyOrdered()),
@@ -394,7 +400,7 @@ class ApiData
                     'vat' => round(floatval($item->getTaxPercent())),
                     'discount' => 0,
                     'type' => 1,
-                );
+                ];
             }
         }
 
@@ -413,7 +419,7 @@ class ApiData
                 $shippingLabel = __('Shipping');
             }
 
-            $items[] = array(
+            $items[] = [
                 'title' => $shippingLabel,
                 'code' => '',
                 'amount' => 1,
@@ -421,7 +427,7 @@ class ApiData
                 'vat' => round(floatval($shippingTaxPct)),
                 'discount' => 0,
                 'type' => 2,
-            );
+            ];
         }
 
         // Add discount row
@@ -441,7 +447,7 @@ class ApiData
                 $discountLabel = __('Discount');
             }
 
-            $items[] = array(
+            $items[] = [
                 'title' => (string)$discountLabel,
                 'code' => '',
                 'amount' => -1,
@@ -449,7 +455,7 @@ class ApiData
                 'vat' => round(floatval($discountTaxPct)),
                 'discount' => 0,
                 'type' => 3
-            );
+            ];
         }
 
         return $items;
@@ -499,7 +505,8 @@ class ApiData
     /**
      * @return string module version in format x.x.x
      */
-    protected function getExtensionVersion() {
+    protected function getExtensionVersion()
+    {
         return $this->moduleList->getOne(self::MODULE_CODE)['setup_version'];
     }
 }

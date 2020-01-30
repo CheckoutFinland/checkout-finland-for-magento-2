@@ -17,6 +17,9 @@ use Magento\Sales\Api\OrderStatusHistoryRepositoryInterface;
 use Magento\Framework\DB\TransactionFactory;
 use Magento\Sales\Api\Data\OrderInterface;
 
+/**
+ * Class ReceiptDataProvider
+ */
 class ReceiptDataProvider
 {
     const RECEIPT_PROCESSING_CACHE_PREFIX = "receipt_processing_";
@@ -72,7 +75,6 @@ class ReceiptDataProvider
      */
     private $cache;
 
-
     /**
      * ReceiptDataProvider constructor.
      * @param \Magento\Framework\App\Action\Context $context
@@ -101,7 +103,6 @@ class ReceiptDataProvider
         \Magento\Checkout\Model\Session $session,
         \Magento\Sales\Api\TransactionRepositoryInterface $transactionRepository,
         \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender,
-
         TransportBuilder $transportBuilder,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         OrderManagementInterface $orderManagementInterface,
@@ -142,6 +143,10 @@ class ReceiptDataProvider
 
     /* TODO: MOST OF THE LOGIC GOES HERE! */
 
+    /**
+     * @param array $params
+     * @return bool
+     */
     public function execute(array $params)
     {
         $this->orderIncrementalId   =   $params["checkout-reference"];
@@ -200,14 +205,17 @@ class ReceiptDataProvider
      * @param int $orderId
      * @return bool
      */
-    protected function isOrderLocked($orderId) {
+    protected function isOrderLocked($orderId)
+    {
         /** @var string $identifier */
         $identifier = self::RECEIPT_PROCESSING_CACHE_PREFIX . $orderId;
 
         return $this->cache->load($identifier)?true:false;
     }
 
-
+    /**
+     * @param $paymentVerified
+     */
     protected function processOrder($paymentVerified)
     {
         $orderState = $this->opHelper->getDefaultOrderStatus();
@@ -230,6 +238,9 @@ class ReceiptDataProvider
         }
     }
 
+    /**
+     * process invoice
+     */
     protected function processInvoice()
     {
         if ($this->currentOrder->canInvoice()) {
@@ -254,6 +265,9 @@ class ReceiptDataProvider
         }
     }
 
+    /**
+     * @param bool $paymentVerified
+     */
     protected function processPayment($paymentVerified = false)
     {
         if ($paymentVerified === 'ok') {
@@ -267,6 +281,9 @@ class ReceiptDataProvider
         }
     }
 
+    /**
+     * notify canceled order
+     */
     protected function notifyCanceledOrder()
     {
         if (filter_var($this->opHelper->getNotificationEmail(), FILTER_VALIDATE_EMAIL)) {
@@ -286,6 +303,9 @@ class ReceiptDataProvider
         }
     }
 
+    /**
+     * @return array
+     */
     protected function getDetails()
     {
         return [
@@ -295,6 +315,9 @@ class ReceiptDataProvider
         ];
     }
 
+    /**
+     * @return mixed
+     */
     protected function loadOrder()
     {
         $order = $this->orderInterface->loadByIncrementId($this->orderIncrementalId);
@@ -304,6 +327,10 @@ class ReceiptDataProvider
         return $order;
     }
 
+    /**
+     * @param $params
+     * @return bool
+     */
     protected function verifyPaymentData($params)
     {
         $verifiedPayment = $this->verifyPayment($params['signature'], $params['checkout-status'], $params);
@@ -316,6 +343,9 @@ class ReceiptDataProvider
         return $verifiedPayment;
     }
 
+    /**
+     * @return mixed
+     */
     protected function loadTransaction()
     {
         return $transaction = $this->transactionRepository->getByTransactionId(
@@ -325,6 +355,9 @@ class ReceiptDataProvider
         );
     }
 
+    /**
+     * @param $transaction
+     */
     protected function processExistingTransaction($transaction)
     {
         $details = $transaction->getAdditionalInformation(Transaction::RAW_DETAILS);
@@ -333,6 +366,9 @@ class ReceiptDataProvider
         }
     }
 
+    /**
+     * @return bool
+     */
     protected function processTransaction()
     {
         $transaction = $this->loadTransaction();
@@ -343,6 +379,12 @@ class ReceiptDataProvider
         return true;
     }
 
+    /**
+     * @param \Magento\Sales\Model\Order $order
+     * @param $transactionId
+     * @param array $details
+     * @return null
+     */
     protected function addPaymentTransaction(\Magento\Sales\Model\Order $order, $transactionId, array $details = [])
     {
         $transaction = null;
@@ -374,6 +416,12 @@ class ReceiptDataProvider
         throw new TransactionSuccessException(__('All fine'));
     }
 
+    /**
+     * @param $signature
+     * @param $status
+     * @param $params
+     * @return bool
+     */
     protected function verifyPayment($signature, $status, $params)
     {
         $hmac = $this->signature->calculateHmac($params, '', $this->opHelper->getMerchantSecret());
@@ -384,5 +432,4 @@ class ReceiptDataProvider
             return false;
         }
     }
-
 }

@@ -7,8 +7,12 @@ use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data as opHelper;
 use \Psr\Log\LoggerInterface;
 
+/**
+ * Class Index
+ */
 class Index extends \Magento\Framework\App\Action\Action
 {
+
     protected $urlBuilder;
     protected $checkoutSession;
     protected $orderFactory;
@@ -59,12 +63,13 @@ class Index extends \Magento\Framework\App\Action\Action
         parent::__construct($context);
     }
 
+    /**
+     * @return mixed
+     */
     public function execute()
     {
 
         $resultJson = $this->jsonFactory->create();
-
-
 
         $order = null;
         try {
@@ -98,7 +103,6 @@ class Index extends \Magento\Framework\App\Action\Action
                     ->setUrl($formAction)
                     ->setParams($formData);
 
-
                 return $resultJson->setData([
                     'success' => true,
                     'data' => $block->toHtml(),
@@ -123,6 +127,11 @@ class Index extends \Magento\Framework\App\Action\Action
         ]);
     }
 
+    /**
+     * @param $responseData
+     * @param $paymentMethodId
+     * @return array
+     */
     protected function getFormFields($responseData, $paymentMethodId = null)
     {
         $formFields = [];
@@ -138,6 +147,11 @@ class Index extends \Magento\Framework\App\Action\Action
         return $formFields;
     }
 
+    /**
+     * @param $responseData
+     * @param $paymentMethodId
+     * @return string
+     */
     protected function getFormAction($responseData, $paymentMethodId = null)
     {
         $returnUrl = '';
@@ -151,6 +165,10 @@ class Index extends \Magento\Framework\App\Action\Action
         return $returnUrl;
     }
 
+    /**
+     * @param $order
+     * @return mixed
+     */
     protected function getResponseData($order)
     {
         $uri = '/payments';

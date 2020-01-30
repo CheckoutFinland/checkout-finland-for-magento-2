@@ -9,7 +9,6 @@ use Magento\Framework\Setup\SchemaSetupInterface;
 
 /**
  * Class Recurring
- * @package Op\Checkout\Setup
  */
 class Recurring implements InstallSchemaInterface
 {

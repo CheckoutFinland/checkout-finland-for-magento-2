@@ -10,13 +10,40 @@ use Op\Checkout\Model\CheckoutException;
 use Op\Checkout\Model\TransactionSuccessException;
 use Op\Checkout\Model\ReceiptDataProvider;
 
+/**
+ * Class Index
+ * @package Op\Checkout\Controller\Receipt
+ */
 class Index extends \Magento\Framework\App\Action\Action
 {
+    /**
+     * @var Session
+     */
     protected $session;
+
+    /**
+     * @var ResponseValidator
+     */
     protected $responseValidator;
+
+    /**
+     * @var ReceiptDataProvider
+     */
     protected $receiptDataProvider;
+
+    /**
+     * @var QuoteRepository
+     */
     protected $quoteRepository;
 
+    /**
+     * Index constructor.
+     * @param Context $context
+     * @param Session $session
+     * @param ResponseValidator $responseValidator
+     * @param QuoteRepository $quoteRepository
+     * @param ReceiptDataProvider $receiptDataProvider
+     */
     public function __construct(
         Context $context,
         Session $session,
@@ -31,6 +58,9 @@ class Index extends \Magento\Framework\App\Action\Action
         $this->quoteRepository = $quoteRepository;
     }
 
+    /**
+     *  execute function
+     */
     public function execute()
     {
         $isValid = true;

@@ -5,6 +5,9 @@ namespace Op\Checkout\Helper;
 use Magento\Framework\Escaper;
 use Magento\Framework\App\Helper\Context;
 
+/**
+ * Class Data
+ */
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
     protected $_storeManager;
@@ -29,6 +32,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
     const LOGO = 'payment/opcheckout/logo';
 
+    /**
+     * Data constructor.
+     * @param Context $context
+     * @param Escaper $escaper
+     * @param \Magento\Framework\Encryption\EncryptorInterface $encryptor
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     */
     public function __construct(
         Context $context,
         Escaper $escaper,
@@ -41,6 +51,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->escaper = $escaper;
     }
 
+    /**
+     * @param $config_path
+     * @return mixed
+     */
     public function getConfig($config_path)
     {
         return $this->scopeConfig->getValue(
@@ -49,52 +63,81 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         );
     }
 
+    /**
+     * @return mixed
+     */
     public function getMethodStatus()
     {
         return $this->getConfig(self::METHOD_ACTIVE);
     }
 
+    /**
+     * @return mixed
+     */
     public function getDefaultOrderStatus()
     {
         return $this->getConfig(self::DEFAULT_ORDER_STATUS);
     }
 
+    /**
+     * @return mixed
+     */
     public function getDebugLoggerStatus()
     {
         return $this->getConfig(self::DEBUG_LOG);
     }
 
+    /**
+     * @return mixed
+     */
     public function getTitle()
     {
         return $this->getConfig(self::PAYMENT_TITLE);
     }
 
+    /**
+     * @return mixed
+     */
     public function getResponseLog()
     {
         return $this->getConfig(self::RESPONSE_LOG);
     }
 
+    /**
+     * @return mixed
+     */
     public function getRequestLog()
     {
         return $this->getConfig(self::REQUEST_LOG);
-
     }
 
+    /**
+     * @return mixed
+     */
     public function getMerchantId()
     {
         return $this->getConfig(self::MERCHANT_ID_PATH);
     }
 
+    /**
+     * @return mixed
+     */
     public function getSkipBankSelection()
     {
         return $this->getConfig(self::SKIP_BANK_SELECTION);
     }
 
+    /**
+     * @return mixed
+     */
     public function getNotificationEmail()
     {
         return $this->getConfig(self::NOTIFICATION_EMAIL);
     }
 
+    /**
+     * @return mixed
+     */
     public function getMerchantSecret()
     {
         //return $merchant_sercret;
@@ -102,12 +145,19 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->encryptor->decrypt($merchant_sercret);
     }
 
+    /**
+     * @param $string
+     * @return bool
+     */
     public function isJson($string)
     {
         json_decode($string);
         return (json_last_error() == JSON_ERROR_NONE);
     }
 
+    /**
+     * @return string
+     */
     public function getPaymentTemplate()
     {
         if ($this->getSkipBankSelection()) {
@@ -116,21 +166,35 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return self::BYPASS_PATH;
     }
 
+    /**
+     * @param $code
+     * @return mixed
+     */
     public function getPaymentRedirectUrl($code)
     {
         return $this->methods[$code]->getPaymentRedirectUrl();
     }
 
+    /**
+     * @return bool
+     */
     public function getUseBypass()
     {
         return true;
     }
 
+    /**
+     * @param $code
+     * @return mixed
+     */
     public function getEnabledPaymentMethodGroups($code)
     {
         return $this->methods[$code]->getEnabledPaymentMethodGroups();
     }
 
+    /**
+     * @return null|string
+     */
     public function getInstructions()
     {
         if ($this->getSkipBankSelection()) {
@@ -139,6 +203,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return null;
     }
 
+    /**
+     * @return array
+     */
     public function getValidAlgorithms()
     {
         return ["sha256", "sha512"];

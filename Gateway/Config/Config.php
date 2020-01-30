@@ -20,7 +20,4 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     ) {
         parent::__construct($scopeConfig, $methodCode, $pathPattern);
     }
-
-
-
 }

@@ -4,6 +4,9 @@ namespace Op\Checkout\Logger\Response;
 
 use Monolog\Logger;
 
+/**
+ * Class Response
+ */
 class Response extends \Magento\Framework\Logger\Handler\Base
 {
     /**

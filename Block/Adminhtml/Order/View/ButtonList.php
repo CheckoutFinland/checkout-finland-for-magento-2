@@ -3,7 +3,6 @@ namespace Op\Checkout\Block\Adminhtml\Order\View;
 
 /**
  * Class ButtonList
- * @package Op\Checkout\Block\Adminhtml\Order\View
  */
 class ButtonList extends \Magento\Backend\Block\Widget\Button\ButtonList
 {

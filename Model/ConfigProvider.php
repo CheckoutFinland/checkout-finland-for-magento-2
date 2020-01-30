@@ -10,6 +10,9 @@ use Magento\Payment\Helper\Data as PaymentHelper;
 use Op\Checkout\Helper\ApiData as apiData;
 use Op\Checkout\Helper\Data as opHelper;
 
+/**
+ * Class ConfigProvider
+ */
 class ConfigProvider implements ConfigProviderInterface
 {
     const CODE = 'opcheckout';
@@ -25,13 +28,19 @@ class ConfigProvider implements ConfigProviderInterface
      */
     protected $checkoutSession;
 
+    /**
+     * ConfigProvider constructor.
+     * @param opHelper $ophelper
+     * @param apiData $apidata
+     * @param PaymentHelper $paymentHelper
+     * @param Session $checkoutSession
+     */
     public function __construct(
         opHelper $ophelper,
         apiData $apidata,
         PaymentHelper $paymentHelper,
         Session $checkoutSession
-    )
-    {
+    ) {
         $this->ophelper = $ophelper;
         $this->apidata = $apidata;
         $this->checkoutSession = $checkoutSession;
@@ -41,6 +50,9 @@ class ConfigProvider implements ConfigProviderInterface
         }
     }
 
+    /**
+     * @return array
+     */
     public function getConfig()
     {
         $config = [];
@@ -62,6 +74,9 @@ class ConfigProvider implements ConfigProviderInterface
         return $config;
     }
 
+    /**
+     * @return string
+     */
     protected function getPaymentRedirectUrl()
     {
         return 'opcheckout/redirect';
@@ -87,6 +102,9 @@ class ConfigProvider implements ConfigProviderInterface
         return $response['data'];
     }
 
+    /**
+     * @return array
+     */
     protected function getEnabledPaymentMethodGroups()
     {
         $responseData = $this->getAllPaymentMethods();
@@ -104,6 +122,11 @@ class ConfigProvider implements ConfigProviderInterface
         return $this->addMethodsToGroups($groups, $responseData);
     }
 
+    /**
+     * @param $groups
+     * @param $responseData
+     * @return array
+     */
     protected function addMethodsToGroups($groups, $responseData)
     {
         foreach ($groups as $key => $group) {
@@ -117,6 +140,11 @@ class ConfigProvider implements ConfigProviderInterface
         return array_values($groups);
     }
 
+    /**
+     * @param $responseData
+     * @param $groupId
+     * @return array
+     */
     protected function getEnabledPaymentMethodsByGroup($responseData, $groupId)
     {
         $allMethods = [];
@@ -147,6 +175,10 @@ class ConfigProvider implements ConfigProviderInterface
         return $methods;
     }
 
+    /**
+     * @param $responseData
+     * @return array
+     */
     protected function getEnabledPaymentGroups($responseData)
     {
         $allGroups = [];
