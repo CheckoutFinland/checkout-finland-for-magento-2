@@ -9,7 +9,11 @@
 }
 
 .checkout-group-title {
-  margin: 10px 0;
+  padding-left:1em;
+  padding-top:2px;
+  width: 40%;
+  display:table-cell;
+  vertical-align:middle;
 }
 
 .checkout-logo {
@@ -37,12 +41,64 @@
 .checkout-payment-methods .checkout-payment-method {
   display: inline-block;
   margin-bottom: 1%;
+  margin-right: 1%;
   border: 1px solid #e3e3e3;
-  cursor: pointer;
-  width: 18.4%;
+  width: 19.2%;
   box-sizing: border-box;
   text-align: center;
   padding: 5px 10px;
+}
+
+.checkout-group-header-wrapper {
+  display:table;
+  width: 100%;
+  height:5.5em;
+}
+
+.checkout-group-wrapper {
+  display:table;
+  height:100%;
+  width: 100%;
+}
+
+.checkout-group-logo {
+  float:left;
+  padding-right:1em;
+}
+
+.checkout-group-title span {
+  line-height:2.3em;
+}
+
+.checkout-group-method-list {
+  vertical-align: middle;
+  height: 80%;
+  display:table-cell;
+  text-align:right;
+}
+
+.checkout-group-method-list ul {
+  padding-right:2em;
+  vertical-align:middle;
+}
+
+.checkout-group-method-list li {
+  display: inline;
+  font-size: 1.2rem;
+  font-style: italic;
+  padding-top:1.5em;
+}
+
+.checkout-group-method-list li:after {
+  content: ",";
+}
+
+.checkout-group-method-list li:last-child:after {
+  content: "";
+}
+
+.checkout-group-collapsible.active .checkout-group-logo img {
+  filter: invert(100%) brightness(120%);
 }
 
 .checkout-payment-methods .checkout-payment-method-title {
@@ -52,16 +108,8 @@
   display: none; /* Hidden for now, maybe shown by overriding this in a theme */
 }
 
-.checkout-payment-methods .checkout-payment-method.active {
-  border-color: #FF5501;
-}
-
-.checkout-payment-methods .checkout-payment-method:hover,
-.checkout-payment-methods .checkout-payment-method:not(.active):hover {
-  border-color: #FFA273;
-}
-
 .checkout-payment-methods .checkout-payment-method input[type="radio"] {
+    display:none;
 }
 
 .checkout-payment-methods .checkout-payment-method:nth-child(5n+0) {
@@ -85,21 +133,53 @@
 
 @media only screen and (max-width : 1023px) {
   .checkout-payment-methods .checkout-payment-method {
-    width: 23.5%;
+    width: 24.2%;
   }
 
-  .checkout-payment-methods .checkout-payment-method:nth-child(5n+0) { margin-right: 2%; }
+  .checkout-payment-methods .checkout-payment-method:nth-child(5n+0) { margin-right: 1%; }
   .checkout-payment-methods .checkout-payment-method:nth-child(4n+0) { margin-right: 0; }
+
+  .checkout-group-method-list ul {
+    font-size: 1.0rem;
+  }
+
+  .checkout-group-title span {
+    line-height:1.8em;
+  }
+
 }
 
 @media only screen and (max-width : 767px) {
   .checkout-payment-methods .checkout-payment-method {
-    width: 32%;
+    width: 32.6%;
   }
 
-  .checkout-payment-methods .checkout-payment-method:nth-child(5n+0),
-  .checkout-payment-methods .checkout-payment-method:nth-child(4n+0) { margin-right: 2%; }
+  .checkout-payment-methods .checkout-payment-method:nth-child(4n+0) { margin-right: 1%; }
   .checkout-payment-methods .checkout-payment-method:nth-child(3n+0) { margin-right: 0; }
+}
+
+@media only screen and (max-width : 500px) {
+
+  .checkout-group-header-wrapper {
+    height:8em;
+  }
+  .checkout-group-method-list {
+    max-width:75%;
+    text-align: left;
+    float:left;
+  }
+
+  .checkout-group-method-list ul {
+    padding-left:1.5em;
+    width: 25em;
+  }
+
+  .checkout-group-title {
+    display: inline;
+    padding-top:1em;
+    float:left;
+  }
+
 }
 
 @media only screen and (max-width : 320px) {
