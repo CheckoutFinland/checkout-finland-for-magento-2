@@ -18,6 +18,10 @@
   padding-bottom: 1em;
 }
 
+.checkout-payment-terms-container  a{
+    text-decoration: underline;
+}
+
 .checkout-group-title {
   display:flex;
   flex-wrap: nowrap;

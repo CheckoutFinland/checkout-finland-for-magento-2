@@ -24,17 +24,13 @@
             <!-- ko template: getTemplate() --><!-- /ko -->
             <!--/ko-->
         </div>
-        <div class="checkout-agreements-block">
-            <!-- ko foreach: $parent.getRegion('before-place-order') -->
-            <!-- ko template: getTemplate() --><!-- /ko -->
-            <!--/ko-->
-        </div>
         <div class="checkout-payment-terms-container">
             <span data-bind="i18n: 'By confirming this purchase, you consent to the'"></span>
             <a data-bind="i18n: 'terms of the payment service', attr: {href: 'https://www.checkout.fi/ehdot-ja-sopimukset/maksuehdot'}" target="_new"></a>
         </div>
 
         <div class="checkout-payment-methods">
+            <!-- Collapsible elements for payment groups-->
             <div id='accordion-element' class="checkout-payment-groups"
                  data-bind="mageInit: {'accordion':{'collapsible': true, 'openedState': 'active', 'active': '1'}}">
                 <!-- ko foreach:  { data: getMethodGroups(), as: 'methodGroup' } -->
@@ -76,6 +72,11 @@
 
                 <!-- /ko -->
             </div>
+        </div>
+        <div class="checkout-agreements-block">
+            <!-- ko foreach: $parent.getRegion('before-place-order') -->
+            <!-- ko template: getTemplate() --><!-- /ko -->
+            <!--/ko-->
         </div>
         <div class="actions-toolbar">
             <div class="primary">

@@ -92,6 +92,7 @@ class ConfigProvider implements ConfigProviderInterface
                 ]
             ]
             ];
+            //Get images for payment groups
             foreach ($this->getEnabledPaymentMethodGroups() as $group) {
 
                 $groupId = $group['id'];

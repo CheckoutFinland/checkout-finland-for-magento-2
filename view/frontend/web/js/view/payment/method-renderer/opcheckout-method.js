@@ -48,7 +48,7 @@ define(
                     $("<style type='text/css'>" + self.getPaymentMethodStyles() + "</style>").appendTo("head");
 
                     this.selectedMethodGroup.subscribe(function (groupId) {
-                        // Find groups
+                        // Find group
                         var group = _.find(self.getMethodGroups(), function (group) {
                             return groupId == group.id;
                         });
@@ -89,7 +89,7 @@ define(
             getIsSuccess: function () {
                 return checkoutConfig[self.payMethod].success;
             },
-
+            //Get icon for payment group by group id
             getGroupIcon: function(group) {
 
               return checkoutConfig[self.payMethod].image[group];
