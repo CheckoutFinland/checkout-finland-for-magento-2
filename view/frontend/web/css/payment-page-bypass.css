@@ -194,7 +194,7 @@
   .checkout-payment-methods .checkout-payment-method:nth-child(2n+0) { margin-right: 0; }
 
   .checkout-payment-methods .checkout-payment-method {
-    width: 49%;
+    width: 48.5%;
   }
 
 }
