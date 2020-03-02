@@ -93,8 +93,7 @@ class ConfigProvider implements ConfigProviderInterface
             ]
             ];
             //Get images for payment groups
-            foreach ($this->getEnabledPaymentMethodGroups() as $group) {
-
+            foreach ($config['payment'][self::CODE]['method_groups'] as $group) {
                 $groupId = $group['id'];
                 $config['payment'][self::CODE]['image'][$groupId] = '';
 
@@ -125,7 +124,7 @@ class ConfigProvider implements ConfigProviderInterface
         $styles .= '.checkout-group-collapsible li{ color:' . $this->gatewayConfig->getPaymentGroupTextColor($storeId) . '}';
         $styles .= '.checkout-group-collapsible.active span{ color:' . $this->gatewayConfig->getPaymentGroupHighlightTextColor($storeId) . ';}';
         $styles .= '.checkout-group-collapsible.active li{ color:' . $this->gatewayConfig->getPaymentGroupHighlightTextColor($storeId) . '}';
-        $styles .= '.checkout-payment-methods .checkout-payment-method.active{ border-color:' . $this->gatewayConfig->getPaymentMethodHighlightColor() . ';border-width:2px;}';
+        $styles .= '.checkout-payment-methods .checkout-payment-method.active{ border-color:' . $this->gatewayConfig->getPaymentMethodHighlightColor($storeId) . ';border-width:2px;}';
         $styles .= '.checkout-payment-methods .checkout-payment-method:hover, .checkout-payment-methods .checkout-payment-method:not(.active):hover { border-color:' . $this->gatewayConfig->getPaymentMethodHoverHighlight($storeId) . ';}';
         $styles .= $this->gatewayConfig->getAdditionalCss($storeId);
         return $styles;
