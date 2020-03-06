@@ -18,6 +18,14 @@ class Checkout extends \Magento\Payment\Block\Info
      */
     private $storeManager;
 
+    /**
+     * Checkout block constructor
+     *
+     * @param Config $gatewayConfig
+     * @param StoreManagerInterface $storeManager
+     * @param Template\Context $context
+     * @param array $data
+     */
     public function __construct
     (
         Config $gatewayConfig,
