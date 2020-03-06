@@ -135,16 +135,34 @@ class ReceiptDataProvider
      */
     protected $currentOrder;
 
+    /**
+     * @var \Magento\Sales\Model\Order\Payment
+     */
     protected $currentOrderPayment;
 
+    /**
+     * @var null|int
+     */
     protected $orderId;
 
+    /**
+     * @var null|string
+     */
     protected $orderIncrementalId;
 
+    /**
+     * @var null|string
+     */
     protected $transactionId;
 
+    /**
+     * @var null|string
+     */
     protected $paramsStamp;
 
+    /**
+     * @var null|string
+     */
     protected $paramsMethod;
 
     /**
@@ -230,14 +248,19 @@ class ReceiptDataProvider
         $this->currentOrder = $this->loadOrder();
         $this->orderId = $this->currentOrder->getId();
 
-        if ($this->isOrderLocked($this->orderId)) {
-            return false; // needs to be tested if it avoids collision when callback url is called twice at the same time
-        } else {
-            $this->lockProcessingOrder($this->orderId);
+        /** @var int $count */
+        $count = 0;
+
+        while($this->isOrderLocked($this->orderId) && $count < 10) {
+            sleep(1);
+            $count++;
         }
+
+        $this->lockProcessingOrder($this->orderId);
 
         $this->currentOrderPayment = $this->currentOrder->getPayment();
 
+        /** @var bool $paymentVerified */
         $paymentVerified = $this->verifyPaymentData($params);
 
         $this->processTransaction();
@@ -246,8 +269,6 @@ class ReceiptDataProvider
         $this->processOrder($paymentVerified);
 
         $this->unlockProcessingOrder($this->orderId);
-
-        return true;
     }
 
     /**
@@ -380,6 +401,10 @@ class ReceiptDataProvider
         return $order;
     }
 
+    /**
+     * @param string[] $params
+     * @return bool
+     */
     protected function verifyPaymentData($params)
     {
         $verifiedPayment = $this->verifyPayment($params['signature'], $params['checkout-status'], $params);

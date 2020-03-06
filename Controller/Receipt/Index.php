@@ -96,15 +96,11 @@ class Index extends \Magento\Framework\App\Action\Action
         try {
             /*
             there are 2 calls called from OP Checkout.
-            One call is when the customer is redirected back to the magento store.
-            There is also the second, parallel, call from OP Checkout to make sure the payment is confirms (if for any reason customer was not redirected back to the store).
-            Sometimes, the calls are called with too small time difference between them so Magento cannot handle them. The second call must be ignored.
+            One call is when a customer is redirected back to the magento store.
+            There is also the second, parallel, call from OP Checkout to make sure the payment is confirmed (if for any reason customer was not redirected back to the store).
+            Sometimes, the calls are called with too small time difference between them that Magento cannot handle them. The second call must be ignored or slowed down.
             */
-            if (!$this->receiptDataProvider->execute($this->getRequest()->getParams())) {
-                $this->_redirect('checkout/onepage/success'); // the second call, just in case the customer's call is the second one
-
-                return; // avoiding conflict if a callback url is called and processed twice at the same time
-            }
+            $this->receiptDataProvider->execute($this->getRequest()->getParams());
         } catch (CheckoutException $exception) {
             $isValid = false;
             $failMessage = $exception->getMessage();
