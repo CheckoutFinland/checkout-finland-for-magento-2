@@ -3,7 +3,6 @@ namespace Op\Checkout\Gateway\Request;
 
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Payment\Gateway\Request\BuilderInterface;
-use Magento\Braintree\Gateway\SubjectReader;
 use Magento\Store\Model\StoreManagerInterface;
 use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data;
@@ -12,13 +11,6 @@ use Magento\Framework\Serialize\Serializer\Json;
 
 class RefundDataBuilder implements BuilderInterface
 {
-    private $subjectReader;
-
-    /**
-     * @var Data
-     */
-    private $opHelper;
-    protected $currentOrder;
     /**
      * @var StoreManagerInterface
      */
@@ -28,17 +20,24 @@ class RefundDataBuilder implements BuilderInterface
      */
     private $apiData;
     /**
+     * @var UrlInterface
+     */
+    protected $urlInterface;
+    /**
      * @var Json
      */
     private $json;
+    /**
+     * @var Data
+     */
+    private $opHelper;
 
-    protected $itemArgs;
+    protected $currentOrder;
     protected $orderItems;
-    protected $urlInterface;
 
     /**
      * RefundDataBuilder constructor.
-     * @param SubjectReader $subjectReader
+     *
      * @param StoreManagerInterface $storeManager
      * @param ApiData $apiData
      * @param UrlInterface $urlInterface
@@ -46,7 +45,6 @@ class RefundDataBuilder implements BuilderInterface
      * @param Data $opHelper
      */
     public function __construct(
-        SubjectReader $subjectReader,
         StoreManagerInterface $storeManager,
         ApiData $apiData,
         UrlInterface $urlInterface,
@@ -54,7 +52,6 @@ class RefundDataBuilder implements BuilderInterface
         Data $opHelper
     ) {
         $this->opHelper = $opHelper;
-        $this->subjectReader = $subjectReader;
         $this->storeManager = $storeManager;
         $this->apiData = $apiData;
         $this->json = $json;

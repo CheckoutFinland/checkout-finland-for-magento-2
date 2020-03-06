@@ -13,10 +13,19 @@ class Config extends \Magento\Payment\Gateway\Config\Config
 {
     const DEFAULT_PATH_PATTERN = 'payment/%s/%s';
     const KEY_TITLE = 'title';
+    const CODE = 'opcheckout';
+    const KEY_ACTIVE = 'active';
+    const KEY_PAYMENTGROUP_BG_COLOR = 'op_personalization/payment_group_bg';
+    const KEY_PAYMENTGROUP_HIGHLIGHT_BG_COLOR = 'op_personalization/payment_group_highlight_bg';
+    const KEY_PAYMENTGROUP_TEXT_COLOR = 'op_personalization/payment_group_text';
+    const KEY_PAYMENTGROUP_HIGHLIGHT_TEXT_COLOR = 'op_personalization/payment_group_highlight_text';
+    const KEY_PAYMENTMETHOD_HIGHLIGHT_COLOR = 'op_personalization/payment_method_highlight';
+    const KEY_PAYMENTMETHOD_HIGHLIGHT_HOVER = 'op_personalization/payment_method_hover';
+    const KEY_PAYMENTMETHOD_ADDITIONAL = 'op_personalization/advanced_op_personalization/additional_css';
 
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        $methodCode = 'opcheckout',
+        $methodCode = self::CODE,
         $pathPattern = self::DEFAULT_PATH_PATTERN
     ) {
         parent::__construct($scopeConfig, $methodCode, $pathPattern);
@@ -31,5 +40,51 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     public function getTitle($storeId = null)
     {
         return $this->getValue(self::KEY_TITLE, $storeId);
+    }
+
+    /**  
+     * Gets Payment configuration status.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isActive($storeId = null)
+    {
+        return (bool) $this->getValue(self::KEY_ACTIVE, $storeId);
+    }
+
+    public function getPaymentGroupBgColor($storeId = null)
+    {
+        return $this->getValue(self::KEY_PAYMENTGROUP_BG_COLOR, $storeId);
+    }
+
+    public function getPaymentGroupHighlightBgColor($storeId = null)
+    {
+        return $this->getValue(self::KEY_PAYMENTGROUP_HIGHLIGHT_BG_COLOR, $storeId);
+    }
+
+    public function getPaymentGroupTextColor($storeId = null)
+    {
+        return $this->getValue(self::KEY_PAYMENTGROUP_TEXT_COLOR, $storeId);
+    }
+
+    public function getPaymentGroupHighlightTextColor($storeId = null)
+    {
+        return $this->getValue(self::KEY_PAYMENTGROUP_HIGHLIGHT_TEXT_COLOR, $storeId);
+    }
+
+    public function getPaymentMethodHighlightColor($storeId = null)
+    {
+        return $this->getValue(self::KEY_PAYMENTMETHOD_HIGHLIGHT_COLOR, $storeId);
+    }
+
+    public function getPaymentMethodHoverHighlight($storeId = null)
+    {
+        return $this->getValue(self::KEY_PAYMENTMETHOD_HIGHLIGHT_HOVER, $storeId);
+    }
+
+    public function getAdditionalCss($storeId = null)
+    {
+        return $this->getValue(self::KEY_PAYMENTMETHOD_ADDITIONAL, $storeId);
     }
 }
