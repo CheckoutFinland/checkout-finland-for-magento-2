@@ -23,19 +23,21 @@ class ApiData
      */
     const API_ENDPOINT = 'https://api.checkout.fi';
 
-
     /**
      * @var Order
      */
     private $order;
+
     /**
      * @var RequestLogger
      */
     private $requestLogger;
+
     /**
      * @var ResponseLogger
      */
     private $responseLogger;
+
     /**
      * @var CheckoutHelper
      */
@@ -283,8 +285,8 @@ class ApiData
                 'cancel' => $this->getReceiptUrl(),
             ],
             'callbackUrls' => [
-                'success' => $this->getReceiptUrl(),
-                'cancel' => $this->getReceiptUrl(),
+                'success' => $this->getCallbackUrl(),
+                'cancel' => $this->getCallbackUrl(),
             ],
         ];
 
@@ -337,6 +339,15 @@ class ApiData
         ]);
 
         return $receiptUrl;
+    }
+
+    protected function getCallbackUrl()
+    {
+        $successUrl = $this->urlBuilder->getUrl('opcheckout/callback', [
+            '_secure' => $this->request->isSecure()
+        ]);
+
+        return $successUrl;
     }
 
 

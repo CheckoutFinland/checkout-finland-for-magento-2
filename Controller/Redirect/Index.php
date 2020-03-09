@@ -7,6 +7,9 @@ use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data as opHelper;
 use \Psr\Log\LoggerInterface;
 
+/**
+ * Class Index
+ */
 class Index extends \Magento\Framework\App\Action\Action
 {
     protected $urlBuilder;
@@ -62,9 +65,8 @@ class Index extends \Magento\Framework\App\Action\Action
     public function execute()
     {
 
+        /** @var \Magento\Framework\Controller\Result\Json $resultJson */
         $resultJson = $this->jsonFactory->create();
-
-
 
         $order = null;
         try {
@@ -84,6 +86,7 @@ class Index extends \Magento\Framework\App\Action\Action
 
                 if ($this->opHelper->getSkipBankSelection()) {
                     $redirect_url = $responseData->href;
+
                     return $resultJson->setData([
                         'success' => true,
                         'data' => 'redirect',
@@ -97,7 +100,6 @@ class Index extends \Magento\Framework\App\Action\Action
                     ->createBlock('Op\Checkout\Block\Redirect\Checkout')
                     ->setUrl($formAction)
                     ->setParams($formData);
-
 
                 return $resultJson->setData([
                     'success' => true,
