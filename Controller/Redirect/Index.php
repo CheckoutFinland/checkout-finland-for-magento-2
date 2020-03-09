@@ -161,7 +161,7 @@ class Index extends \Magento\Framework\App\Action\Action
         $response = $this->apiData->getResponse($uri, $order, $merchantId, $merchantSecret, $method);
 
         $status = $response['status'];
-        if (isset($status) && ($status === 422 || $status === 400 || $status === 404)){
+        if ($status === 422 || $status === 400 || $status === 404 || !isset($status)){
             throw new LocalizedException(__('Connection error to Op Payment Service Api'));
         }
         return $response['data'];
