@@ -1,7 +1,13 @@
 <?php
 namespace Op\Checkout\Model;
 
+use Magento\Checkout\Model\Session;
+use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\CacheInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Sales\Api\TransactionRepositoryInterface;
+use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 use Magento\Sales\Model\Order\Payment\Transaction;
 use Magento\Sales\Model\Order\Payment\Transaction\Builder as transactionBuilder;
 use Magento\Sales\Model\Order\Payment\Transaction\BuilderInterface as transactionBuilderInterface;
@@ -17,76 +23,161 @@ use Magento\Sales\Api\OrderStatusHistoryRepositoryInterface;
 use Magento\Framework\DB\TransactionFactory;
 use Magento\Sales\Api\Data\OrderInterface;
 
+/**
+ * Class ReceiptDataProvider
+ */
 class ReceiptDataProvider
 {
     const RECEIPT_PROCESSING_CACHE_PREFIX = "receipt_processing_";
 
+    /**
+     * @var \Magento\Framework\UrlInterface
+     */
     protected $urlBuilder;
+
+    /**
+     * @var Context
+     */
+    protected $context;
+
+    /**
+     * @var Session
+     */
     protected $session;
+
+    /**
+     * @var TransactionRepositoryInterface
+     */
     protected $transactionRepository;
-    protected $orderFactory;
+
+    /**
+     * @var OrderSender
+     */
     protected $orderSender;
+
+    /**
+     * @var TransportBuilder
+     */
+    protected $transportBuilder;
+
+    /**
+     * @var ScopeConfigInterface
+     */
     protected $scopeConfig;
+
+    /**
+     * @var OrderManagementInterface
+     */
     protected $orderManagementInterface;
-    protected $orderRepositoryInterface;
+
+    /**
+     * @var ResponseValidator
+     */
     protected $responseValidator;
+
+    /**
+     * @var OrderRepositoryInterface
+     */
+    protected $orderRepositoryInterface;
+
+    /**
+     * @var transactionBuilderInterface
+     */
     protected $transactionBuilderInterface;
-    protected $signature;
+
     /**
      * @var opCapture
      */
     protected $opCapture;
+
+    /**
+     * @var Signature
+     */
+    protected $signature;
+
     /**
      * @var InvoiceService
      */
     protected $invoiceService;
+
     /**
      * @var OrderStatusHistoryRepositoryInterface
      */
     protected $orderStatusHistoryRepository;
+
     /**
      * @var TransactionFactory
      */
     protected $transactionFactory;
+
     /**
      * @var opHelper
      */
     protected $opHelper;
+
     /**
      * @var OrderInterface
      */
     protected $orderInterface;
 
     /**
-     * @var /Magento/Sales/Model/Order
+     * @var transactionBuilder
      */
-    protected $currentOrder;
-    protected $currentOrderPayment;
-    protected $orderId;
-    protected $orderIncrementalId;
-    protected $transactionId;
-    protected $paramsStamp;
-    protected $paramsMethod;
+    protected $transactionBuilder;
+
     /**
-     * @var \Magento\Framework\App\CacheInterface|Magento\Framework\App\CacheInterface
+     * @var |Magento\Framework\App\CacheInterface
      */
     private $cache;
 
+    /**
+     * @var /Magento/Sales/Model/Order
+     */
+    protected $currentOrder;
+
+    /**
+     * @var \Magento\Sales\Model\Order\Payment
+     */
+    protected $currentOrderPayment;
+
+    /**
+     * @var null|int
+     */
+    protected $orderId;
+
+    /**
+     * @var null|string
+     */
+    protected $orderIncrementalId;
+
+    /**
+     * @var null|string
+     */
+    protected $transactionId;
+
+    /**
+     * @var null|string
+     */
+    protected $paramsStamp;
+
+    /**
+     * @var null|string
+     */
+    protected $paramsMethod;
 
     /**
      * ReceiptDataProvider constructor.
-     * @param \Magento\Framework\App\Action\Context $context
-     * @param \Magento\Checkout\Model\Session $session
-     * @param \Magento\Sales\Api\TransactionRepositoryInterface $transactionRepository
-     * @param \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender
-
+     * @param Context $context
+     * @param Session $session
+     * @param TransactionRepositoryInterface $transactionRepository
+     * @param OrderSender $orderSender
      * @param TransportBuilder $transportBuilder
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param ScopeConfigInterface $scopeConfig
      * @param OrderManagementInterface $orderManagementInterface
      * @param ResponseValidator $responseValidator
      * @param OrderRepositoryInterface $orderRepositoryInterface
      * @param transactionBuilderInterface $transactionBuilderInterface
-     * @param Magento\Framework\App\CacheInterface $cache
+     * @param CacheInterface $cache
      * @param opCapture $opCapture
      * @param Signature $signature
      * @param InvoiceService $invoiceService
@@ -97,18 +188,17 @@ class ReceiptDataProvider
      * @param transactionBuilder $transactionBuilder
      */
     public function __construct(
-        \Magento\Framework\App\Action\Context $context,
-        \Magento\Checkout\Model\Session $session,
-        \Magento\Sales\Api\TransactionRepositoryInterface $transactionRepository,
-        \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender,
-
+        Context $context,
+        Session $session,
+        TransactionRepositoryInterface $transactionRepository,
+        OrderSender $orderSender,
         TransportBuilder $transportBuilder,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        ScopeConfigInterface $scopeConfig,
         OrderManagementInterface $orderManagementInterface,
         ResponseValidator $responseValidator,
         OrderRepositoryInterface $orderRepositoryInterface,
         transactionBuilderInterface $transactionBuilderInterface,
-        \Magento\Framework\App\CacheInterface $cache,
+        CacheInterface $cache,
         opCapture $opCapture,
         Signature $signature,
         InvoiceService $invoiceService,
@@ -119,29 +209,33 @@ class ReceiptDataProvider
         transactionBuilder $transactionBuilder
     ) {
         $this->urlBuilder = $context->getUrl();
+        $this->cache = $cache;
+        $this->context = $context;
         $this->session = $session;
         $this->transactionRepository = $transactionRepository;
         $this->orderSender = $orderSender;
         $this->transportBuilder = $transportBuilder;
         $this->scopeConfig = $scopeConfig;
-        $this->signature = $signature;
         $this->orderManagementInterface = $orderManagementInterface;
-        $this->orderRepositoryInterface = $orderRepositoryInterface;
         $this->responseValidator = $responseValidator;
-        $this->transactionBuilder = $transactionBuilder;
+        $this->orderRepositoryInterface = $orderRepositoryInterface;
         $this->transactionBuilderInterface = $transactionBuilderInterface;
         $this->opCapture = $opCapture;
+        $this->signature = $signature;
         $this->invoiceService = $invoiceService;
         $this->orderStatusHistoryRepository = $orderStatusHistoryRepository;
         $this->transactionFactory = $transactionFactory;
         $this->opHelper = $opHelper;
-        $this->context = $context;
         $this->orderInterface = $orderInterface;
-        $this->cache = $cache;
+        $this->transactionBuilder = $transactionBuilder;
     }
 
     /* TODO: MOST OF THE LOGIC GOES HERE! */
 
+    /**
+     * @param array $params
+     * @return bool
+     */
     public function execute(array $params)
     {
         $this->orderIncrementalId   =   $params["checkout-reference"];
@@ -154,14 +248,19 @@ class ReceiptDataProvider
         $this->currentOrder = $this->loadOrder();
         $this->orderId = $this->currentOrder->getId();
 
-        if ($this->isOrderLocked($this->orderId)) {
-            return false; // needs to be tested if it avoids collision when callback url is called twice at the same time
-        } else {
-            $this->lockProcessingOrder($this->orderId);
+        /** @var int $count */
+        $count = 0;
+
+        while($this->isOrderLocked($this->orderId) && $count < 10) {
+            sleep(1);
+            $count++;
         }
+
+        $this->lockProcessingOrder($this->orderId);
 
         $this->currentOrderPayment = $this->currentOrder->getPayment();
 
+        /** @var bool $paymentVerified */
         $paymentVerified = $this->verifyPaymentData($params);
 
         $this->processTransaction();
@@ -170,8 +269,6 @@ class ReceiptDataProvider
         $this->processOrder($paymentVerified);
 
         $this->unlockProcessingOrder($this->orderId);
-
-        return true;
     }
 
     /**
@@ -304,6 +401,10 @@ class ReceiptDataProvider
         return $order;
     }
 
+    /**
+     * @param string[] $params
+     * @return bool
+     */
     protected function verifyPaymentData($params)
     {
         $verifiedPayment = $this->verifyPayment($params['signature'], $params['checkout-status'], $params);
@@ -384,5 +485,4 @@ class ReceiptDataProvider
             return false;
         }
     }
-
 }
