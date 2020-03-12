@@ -214,7 +214,7 @@ class ApiData
         $responseSignature = $response->getHeader('signature')[0];
 
         // No logging when entering checkout page
-        if ($method == 'POST' && $responseLogEnabled && !strpos($uri, 'refund')) {
+        if ($method == 'POST' && $responseLogEnabled && strpos($uri, 'refund') === false) {
             // Gather and log relevant data
             $encodedBody = json_decode($responseBody, true);
             $loggedData = json_encode(
