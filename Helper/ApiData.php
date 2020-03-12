@@ -145,7 +145,6 @@ class ApiData
      * @param $method
      * @param null $refundId
      * @param null $refundBody
-     * @throws CheckoutException
      * @return array|\Psr\Http\Message\ResponseInterface|null
      */
     public function getResponse(
@@ -187,7 +186,7 @@ class ApiData
             if ($method == 'POST') {
                 $response = $client->post(self::API_ENDPOINT . $uri, ['body' => $body]);
                 if ($responseLogEnabled) {
-                    $this->responseLogger->debug('Getting response from OP Payment Service API. Order Id: ' . $order->getId() . ', Checkout timestamp: ' . $headers['checkout-timestamp']);
+                    $this->responseLogger->debug('Getting response from OP Payment Service API. Order Id: ' . (!empty($order) ? $order->getId() : '-') . ', Checkout timestamp: ' . $headers['checkout-timestamp']);
                 }
             } else {
                 $response = $client->get(self::API_ENDPOINT . $uri, ['body' => '']);
@@ -202,7 +201,7 @@ class ApiData
                 $response["data"] = $e->getMessage();
                 $response["status"] = $e->getCode();
             }
-            throw new CheckoutException(__('Connection error to OP Payment Service API'));
+            return $response;
         }
 
         $responseBody = $response->getBody()->getContents();
@@ -215,7 +214,7 @@ class ApiData
         $responseSignature = $response->getHeader('signature')[0];
 
         // No logging when entering checkout page
-        if ($method == 'POST' && $responseLogEnabled) {
+        if ($method == 'POST' && $responseLogEnabled && strpos($uri, 'refund') === false) {
             // Gather and log relevant data
             $encodedBody = json_decode($responseBody, true);
             $loggedData = json_encode(
