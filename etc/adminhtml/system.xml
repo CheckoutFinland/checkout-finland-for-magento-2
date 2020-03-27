@@ -91,6 +91,11 @@
                            showInWebsite="1" showInStore="1" canRestore="1">
                         <label>Highlighted payment group text color</label>
                     </field>
+                    <field id="payment_group_hover" translate="label comment" sortOrder="11" type="text"
+                           showInDefault="1"
+                           showInWebsite="1" showInStore="1" canRestore="1">
+                        <label>Payment group hover color</label>
+                    </field>
                     <field id="payment_method_highlight" translate="label comment" sortOrder="20" type="text"
                            showInDefault="1"
                            showInWebsite="1" showInStore="1" canRestore="1">

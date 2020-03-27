@@ -25,8 +25,8 @@
             <!--/ko-->
         </div>
         <div class="checkout-payment-terms-container">
-            <span data-bind="i18n: 'By confirming this purchase, you consent to the'"></span>
-            <a data-bind="i18n: 'terms of the payment service', attr: {href: 'https://www.checkout.fi/ehdot-ja-sopimukset/maksuehdot'}" target="_new"></a>
+            <span data-bind="i18n: 'By confirming this purchase, you consent to the'">
+            <a data-bind="i18n: 'terms of the payment service', attr: {href: 'https://www.checkout.fi/ehdot-ja-sopimukset/maksuehdot'}" target="_blank"></a>
         </div>
 
         <div class="checkout-payment-methods">
@@ -41,19 +41,19 @@
                             <!-- ko if: $parent.getGroupIcon(methodGroup['id']) -->
                             <img class="checkout-group-logo" data-bind="attr: {src: $parent.getGroupIcon(methodGroup['id'])}"/>
                             <!--/ko-->
-                            <span data-bind="text: title"></span>
+                            <span data-bind="text: name"></span>
                         </div>
                         <div class="checkout-group-method-list" >
                             <ul>
-                                <!-- ko foreach: methodGroup['methods'], as: 'paymentMethod' -->
-                                <li data-bind="text: title"></li>
+                                <!-- ko foreach: methodGroup['providers'], as: 'paymentMethod' -->
+                                <li data-bind="text: name"></li>
                                 <!--/ko-->
                             </ul>
                         </div>
                     </div>
                 </div>
                 <div data-role="content" class="checkout-group-wrapper">
-                    <!-- ko foreach: methodGroup['methods'], as: 'paymentMethod' -->
+                    <!-- ko foreach: methodGroup['providers'], as: 'paymentMethod' -->
                     <div class="checkout-payment-method" data-bind="
                   attr: {id: 'checkout-payment-method-' + id},
                   css: { active: $parents[1].selectedPaymentMethodId() == id },
@@ -61,7 +61,7 @@
                         <div class="checkout-payment-method-logo">
                             <img data-bind="attr: { src: icon }">
                         </div>
-                        <div class="checkout-payment-method-title" data-bind="text: title"></div>
+                        <div class="checkout-payment-method-title" data-bind="text: name"></div>
                         <div>
                             <input type="radio"
                                    data-bind="attr: {value: id}, checked: $parents[1].selectedPaymentMethodId"/>

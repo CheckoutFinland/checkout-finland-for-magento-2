@@ -24,15 +24,16 @@
         <request_log>0</request_log>
         <logo>https://cdn2.hubspot.net/hubfs/2610868/Logot/op-logo-30x30px.png</logo>
         <op_personalization>
-        <payment_group_bg>#ebebeb</payment_group_bg>
-        <payment_group_text>#323232</payment_group_text>
-        <payment_group_highlight_bg>#007b90</payment_group_highlight_bg>
-        <payment_group_highlight_text>#f2f8f9</payment_group_highlight_text>
-        <payment_method_highlight>#007b90</payment_method_highlight>
-        <payment_method_hover>#007b90</payment_method_hover>
-         <advanced_op_personalization>
-           <additional_css></additional_css>
-         </advanced_op_personalization>
+          <payment_group_bg>#ebebeb</payment_group_bg>
+          <payment_group_text>#323232</payment_group_text>
+          <payment_group_highlight_bg>#007b90</payment_group_highlight_bg>
+          <payment_group_highlight_text>#f2f8f9</payment_group_highlight_text>
+          <payment_group_hover>#d0d0d0</payment_group_hover>
+          <payment_method_highlight>#007b90</payment_method_highlight>
+          <payment_method_hover>#007b90</payment_method_hover>
+          <advanced_op_personalization>
+            <additional_css></additional_css>
+          </advanced_op_personalization>
         </op_personalization>
       </opcheckout>
     </payment>

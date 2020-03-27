@@ -81,25 +81,27 @@ class ConfigProvider implements ConfigProviderInterface
             return $config;
         }
         try {
+            $groupData = $this->getAllPaymentMethods();
+
             $config = ['payment' => [
                 self::CODE => [
                     'instructions' => $this->ophelper->getInstructions(),
                     'use_bypass' => true,
                     'payment_redirect_url' => $this->getPaymentRedirectUrl(),
                     'payment_template' => $this->ophelper->getPaymentTemplate(),
-                    'method_groups' => $this->getEnabledPaymentMethodGroups(),
+                    'method_groups' => $this->handlePaymentProviderGroupData($groupData->groups),
+                    'terms' => $groupData->terms,
                     'payment_method_styles' => $this->wrapPaymentMethodStyles($storeId)
                 ]
             ]
             ];
             //Get images for payment groups
-            foreach ($config['payment'][self::CODE]['method_groups'] as $group) {
-                $groupId = $group['id'];
+            foreach ($groupData->groups as $group) {
+                $groupId = $group->id;
+                $groupImage = $group->svg;
                 $config['payment'][self::CODE]['image'][$groupId] = '';
-
-                $url = $this->assetRepository->getUrl('Op_Checkout::images/icon_' . $groupId . '.svg');
-                if ($url) {
-                    $config['payment'][self::CODE]['image'][$groupId] = $url;
+                if ($groupImage) {
+                    $config['payment'][self::CODE]['image'][$groupId] = $groupImage;
                 }
             }
         } catch (CheckoutException $e) {
@@ -124,6 +126,7 @@ class ConfigProvider implements ConfigProviderInterface
         $styles .= '.checkout-group-collapsible li{ color:' . $this->gatewayConfig->getPaymentGroupTextColor($storeId) . '}';
         $styles .= '.checkout-group-collapsible.active span{ color:' . $this->gatewayConfig->getPaymentGroupHighlightTextColor($storeId) . ';}';
         $styles .= '.checkout-group-collapsible.active li{ color:' . $this->gatewayConfig->getPaymentGroupHighlightTextColor($storeId) . '}';
+        $styles .= '.checkout-group-collapsible:hover:not(.active) {background-color:' . $this->gatewayConfig->getPaymentGroupHoverColor() . '}';
         $styles .= '.checkout-payment-methods .checkout-payment-method.active{ border-color:' . $this->gatewayConfig->getPaymentMethodHighlightColor($storeId) . ';border-width:2px;}';
         $styles .= '.checkout-payment-methods .checkout-payment-method:hover, .checkout-payment-methods .checkout-payment-method:not(.active):hover { border-color:' . $this->gatewayConfig->getPaymentMethodHoverHighlight($storeId) . ';}';
         $styles .= $this->gatewayConfig->getAdditionalCss($storeId);
@@ -136,7 +139,7 @@ class ConfigProvider implements ConfigProviderInterface
     }
 
     /**
-     * Get all payment methods with order total value
+     * Get all payment methods and groups with order total value
      *
      * @return mixed
      * @throws LocalizedException
@@ -145,7 +148,7 @@ class ConfigProvider implements ConfigProviderInterface
     protected function getAllPaymentMethods()
     {
         $orderValue = $this->checkoutSession->getQuote()->getGrandTotal();
-        $uri = '/merchants/payment-providers?amount=' . $orderValue * 100;
+        $uri = '/merchants/grouped-payment-providers?amount=' . $orderValue * 100;
         $merchantId = $this->ophelper->getMerchantId();
         $merchantSecret = $this->ophelper->getMerchantSecret();
         $method = 'get';
@@ -155,74 +158,56 @@ class ConfigProvider implements ConfigProviderInterface
         return $response['data'];
     }
 
-    protected function getEnabledPaymentMethodGroups()
-    {
-        $responseData = $this->getAllPaymentMethods();
-
-        $groupData = $this->getEnabledPaymentGroups($responseData);
-        $groups = [];
-
-        foreach ($groupData as $group) {
-            $groups[] = [
-                'id' => $group,
-                'title' => __($group)
-            ];
-        }
-
-        return $this->addMethodsToGroups($groups, $responseData);
-    }
-
-    protected function addMethodsToGroups($groups, $responseData)
-    {
-        foreach ($groups as $key => $group) {
-            $groups[$key]['methods'] = $this->getEnabledPaymentMethodsByGroup($responseData, $group['id']);
-
-            // Remove empty groups
-            if (empty($groups[$key]['methods'])) {
-                unset($groups[$key]);
-            }
-        }
-        return array_values($groups);
-    }
-
-    protected function getEnabledPaymentMethodsByGroup($responseData, $groupId)
+    /**
+     * Create array for payment providers and groups containing unique method id
+     *
+     * @param $responseData
+     * @return array
+     */
+    protected function handlePaymentProviderGroupData($responseData)
     {
         $allMethods = [];
-
-        foreach ($responseData as $provider) {
-            $allMethods[] = [
-                'value' => $provider->id,
-                'label' => $provider->id,
-                'group' => $provider->group,
-                'icon' => $provider->svg
+        $allGroups = [];
+        foreach ($responseData as $group) {
+            $allGroups[] = [
+                'id' => $group->id,
+                'name' => $group->name,
+                'icon' => $group->icon,
+                'svg' => $group->svg,
             ];
+            foreach ($group->providers as $provider) {
+                $allMethods[] = $provider;
+            }
         }
+        foreach ($allGroups as $key => $group) {
+            $allGroups[$key]['providers'] = $this->addProviderDataToGroup($allMethods, $group['id']);
+        }
+        return array_values($allGroups);
+    }
 
+    /**
+     * Add payment method data to group
+     *
+     * @param $responseData
+     * @param $groupId
+     * @return array
+     */
+    protected function addProviderDataToGroup($responseData, $groupId)
+    {
         $i = 1;
 
-        foreach ($allMethods as $key => $method) {
-            if ($method['group'] == $groupId) {
+        foreach ($responseData as $key => $method) {
+            if ($method->group == $groupId) {
                 $methods[] = [
-                    'checkoutId' => $method['value'],
-                    'id' => $method['value'] . $i++,
-                    'title' => $method['label'],
-                    'group' => $method['group'],
-                    'icon' => $method['icon']
+                    'checkoutId' => $method->id,
+                    'id' => $method->id . $i++,
+                    'name' => $method->name,
+                    'group' => $method->group,
+                    'icon' => $method->icon,
+                    'svg' => $method->svg
                 ];
             }
         }
-
         return $methods;
-    }
-
-    protected function getEnabledPaymentGroups($responseData)
-    {
-        $allGroups = [];
-
-        foreach ($responseData as $provider) {
-            $allGroups[] = $provider->group;
-        }
-
-        return array_unique($allGroups);
     }
 }
