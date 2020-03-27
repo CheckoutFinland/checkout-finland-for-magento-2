@@ -1,10 +1,10 @@
 Order number is empty,Tilausnumero puuttuu.
 No order for processing found,Tilausta ei löytynyt.
 Order canceled. Failed to complete the payment.,Maksua ei voitu suorittaa. Ole hyvä ja yritä uudelleen.
-Failed to complete the payment. Please try again or contact the customer service.,Maksua ei voitu suorittaa. Ole hyvä ja yritä uudelleen. (2)
+Failed to complete the payment. Please try again or contact the customer service.,Maksua ei voitu suorittaa. Ole hyvä ja yritä uudelleen.
 Payment failed,Maksu epäonnistui.
 Payment has been completed,Maksu hyväksytty.
-Order canceled. Failed to redirect to Checkout.,Maksua ei voitu suorittaa. Ole hyvä ja yritä uudelleen. (3)
+Order canceled. Failed to redirect to Checkout.,Maksua ei voitu suorittaa. Ole hyvä ja yritä uudelleen.
 Finnish,suomi
 English,englanti
 Swedish,ruotsi
