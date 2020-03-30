@@ -25,8 +25,7 @@
             <!--/ko-->
         </div>
         <div class="checkout-payment-terms-container">
-            <span data-bind="i18n: 'By confirming this purchase, you consent to the'"></span>
-            <a data-bind="i18n: 'terms of the payment service', attr: {href: 'https://www.checkout.fi/ehdot-ja-sopimukset/maksuehdot'}" target="_blank"></a>
+            <span data-bind="html: getTerms()"></span>
         </div>
 
         <div class="checkout-payment-methods">

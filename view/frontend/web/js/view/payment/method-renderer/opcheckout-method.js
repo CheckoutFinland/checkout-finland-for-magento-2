@@ -92,7 +92,7 @@ define(
             //Get icon for payment group by group id
             getGroupIcon: function(group) {
 
-              return checkoutConfig[self.payMethod].image[group];
+                return checkoutConfig[self.payMethod].image[group];
             },
 
             getPaymentPageBypass: function () {
@@ -105,6 +105,10 @@ define(
 
             getMethodGroups: function () {
                 return checkoutConfig[self.payMethod].method_groups;
+            },
+
+            getTerms: function () {
+                return checkoutConfig[self.payMethod].payment_terms;
             },
 
             selectPaymentMethod: function () {

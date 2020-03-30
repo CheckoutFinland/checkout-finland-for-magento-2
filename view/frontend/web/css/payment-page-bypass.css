@@ -20,6 +20,7 @@
 
 .checkout-payment-terms-container  a{
     text-decoration: underline;
+    display: inline-block;
 }
 
 .checkout-group-title {
