@@ -12,6 +12,7 @@ use Op\Checkout\Helper\Data as opHelper;
 use Op\Checkout\Gateway\Config\Config;
 use Magento\Framework\View\Asset\Repository as AssetRepository;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Framework\Locale\Resolver;
 
 class ConfigProvider implements ConfigProviderInterface
 {
@@ -38,6 +39,10 @@ class ConfigProvider implements ConfigProviderInterface
      * @var StoreManagerInterface
      */
     private $storeManager;
+    /**
+     * @var Resolver
+     */
+    private $localeResolver;
 
     /**
      * ConfigProvider constructor
@@ -58,7 +63,8 @@ class ConfigProvider implements ConfigProviderInterface
         Session $checkoutSession,
         Config $gatewayConfig,
         AssetRepository $assetRepository,
-        StoreManagerInterface $storeManager
+        StoreManagerInterface $storeManager,
+        Resolver $localeResolver
     )
     {
         $this->ophelper = $ophelper;
@@ -67,6 +73,7 @@ class ConfigProvider implements ConfigProviderInterface
         $this->gatewayConfig = $gatewayConfig;
         $this->assetRepository = $assetRepository;
         $this->storeManager = $storeManager;
+        $this->localeResolver = $localeResolver;
         foreach ($this->methodCodes as $code) {
             $this->methods[$code] = $paymentHelper->getMethodInstance($code);
         }
@@ -147,8 +154,14 @@ class ConfigProvider implements ConfigProviderInterface
      */
     protected function getAllPaymentMethods()
     {
+        $locale = 'EN';
+        if ($this->localeResolver->getLocale() === 'fi_FI') {
+            $locale = 'FI';
+        } if ($this->localeResolver->getLocale() === 'sv_SE') {
+        $locale = 'SE';
+    }
         $orderValue = $this->checkoutSession->getQuote()->getGrandTotal();
-        $uri = '/merchants/grouped-payment-providers?amount=' . $orderValue * 100;
+        $uri = '/merchants/grouped-payment-providers?amount=' . $orderValue * 100 . '&language=' . $locale;
         $merchantId = $this->ophelper->getMerchantId();
         $merchantSecret = $this->ophelper->getMerchantSecret();
         $method = 'get';
