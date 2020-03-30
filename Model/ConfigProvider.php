@@ -97,7 +97,7 @@ class ConfigProvider implements ConfigProviderInterface
                     'payment_redirect_url' => $this->getPaymentRedirectUrl(),
                     'payment_template' => $this->ophelper->getPaymentTemplate(),
                     'method_groups' => $this->handlePaymentProviderGroupData($groupData->groups),
-                    'terms' => $groupData->terms,
+                    'payment_terms' => $groupData->terms,
                     'payment_method_styles' => $this->wrapPaymentMethodStyles($storeId)
                 ]
             ]
