@@ -12,7 +12,6 @@ use Op\Checkout\Model\ReceiptDataProvider;
 
 /**
  * Class Index
- * @package Op\Checkout\Controller\Receipt
  */
 class Index extends \Magento\Framework\App\Action\Action
 {
