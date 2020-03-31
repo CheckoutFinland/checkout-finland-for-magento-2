@@ -268,7 +268,7 @@ class ApiData
             'reference' => $order->getIncrementId(),
             'amount' => $order->getGrandTotal() * 100,
             'currency' => $order->getOrderCurrencyCode(),
-            'language' => 'FI',
+            'language' => $this->helper->getStoreLocaleForPaymentProvider(),
             'items' => $this->getOrderItems($order),
             'customer' => [
                 'firstName' => $billingAddress->getFirstName(),
