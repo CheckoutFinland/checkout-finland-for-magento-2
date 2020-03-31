@@ -158,7 +158,7 @@ class ConfigProvider implements ConfigProviderInterface
         if ($this->localeResolver->getLocale() === 'fi_FI') {
             $locale = 'FI';
         } if ($this->localeResolver->getLocale() === 'sv_SE') {
-        $locale = 'SE';
+        $locale = 'SV';
     }
         $orderValue = $this->checkoutSession->getQuote()->getGrandTotal();
         $uri = '/merchants/grouped-payment-providers?amount=' . $orderValue * 100 . '&language=' . $locale;
