@@ -4,6 +4,7 @@ namespace Op\Checkout\Helper;
 
 use Magento\Framework\Escaper;
 use Magento\Framework\App\Helper\Context;
+use Magento\Framework\Locale\Resolver;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -11,6 +12,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     protected $encryptor;
     protected $escaper;
     protected $methods = [];
+    /**
+     * @var Resolver
+     */
+    private $localeResolver;
 
     protected $methodCodes = [\Op\Checkout\Model\ConfigProvider::CODE];
 
@@ -29,16 +34,28 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
     const LOGO = 'payment/opcheckout/logo';
 
+    /**
+     * Helper class constructor.
+     *
+     * @param Context $context
+     * @param Escaper $escaper
+     * @param \Magento\Framework\Encryption\EncryptorInterface $encryptor
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     * @param Resolver $localeResolver
+     */
     public function __construct(
         Context $context,
         Escaper $escaper,
         \Magento\Framework\Encryption\EncryptorInterface $encryptor,
-        \Magento\Store\Model\StoreManagerInterface $storeManager
-    ) {
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
+        Resolver $localeResolver
+    )
+    {
         parent::__construct($context);
         $this->encryptor = $encryptor;
         $this->_storeManager = $storeManager;
         $this->escaper = $escaper;
+        $this->localeResolver = $localeResolver;
     }
 
     public function getConfig($config_path)
@@ -142,5 +159,20 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getValidAlgorithms()
     {
         return ["sha256", "sha512"];
+    }
+
+    /**
+     * @return string
+     */
+    public function getStoreLocaleForPaymentProvider()
+    {
+        $locale = 'EN';
+        if ($this->localeResolver->getLocale() === 'fi_FI') {
+            $locale = 'FI';
+        }
+        if ($this->localeResolver->getLocale() === 'sv_SE') {
+            $locale = 'SV';
+        }
+        return $locale;
     }
 }
