@@ -5,7 +5,6 @@ namespace Op\Checkout\Model;
 use Magento\Checkout\Model\ConfigProviderInterface;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Payment\Helper\Data as PaymentHelper;
 use Op\Checkout\Helper\ApiData as apiData;
 use Op\Checkout\Helper\Data as opHelper;
@@ -54,7 +53,7 @@ class ConfigProvider implements ConfigProviderInterface
             $config['payment']['payment_redirect_url'][self::CODE] = $this->getPaymentRedirectUrl();
             $config['payment']['payment_template'][self::CODE] = $this->ophelper->getPaymentTemplate();
             $config['payment']['method_groups'][self::CODE] = $this->getEnabledPaymentMethodGroups();
-        } catch (CheckoutException $e) {
+        } catch (\Exception $e) {
             $config['payment']['success'][self::CODE] = 0;
             return $config;
         }
@@ -72,7 +71,6 @@ class ConfigProvider implements ConfigProviderInterface
      *
      * @return mixed
      * @throws LocalizedException
-     * @throws NoSuchEntityException
      */
     protected function getAllPaymentMethods()
     {
@@ -83,6 +81,11 @@ class ConfigProvider implements ConfigProviderInterface
         $method = 'get';
 
         $response = $this->apidata->getResponse($uri, '', $merchantId, $merchantSecret, $method);
+
+        $status = $response['status'];
+        if ($status === 422 || $status === 400 || $status === 404 || $status === 401 || !isset($status)){
+            throw new LocalizedException(__('Connection error to Op Payment Service Api'));
+        }
 
         return $response['data'];
     }
