@@ -13,6 +13,7 @@ use Magento\Sales\Model\Order\Payment\Transaction\Builder as transactionBuilder;
 use Magento\Sales\Model\Order\Payment\Transaction\BuilderInterface as transactionBuilderInterface;
 use Magento\Framework\Mail\Template\TransportBuilder;
 use Magento\Sales\Api\OrderManagementInterface;
+use Magento\Tests\NamingConvention\true\mixed;
 use Op\Checkout\Helper\Data as opHelper;
 use Op\Checkout\Helper\Signature;
 use Magento\Sales\Api\OrderRepositoryInterface;
@@ -230,11 +231,10 @@ class ReceiptDataProvider
         $this->transactionBuilder = $transactionBuilder;
     }
 
-    /* TODO: MOST OF THE LOGIC GOES HERE! */
+    /* MOST OF THE LOGIC GOES HERE! */
 
     /**
      * @param array $params
-     * @return bool
      */
     public function execute(array $params)
     {
@@ -251,7 +251,7 @@ class ReceiptDataProvider
         /** @var int $count */
         $count = 0;
 
-        while($this->isOrderLocked($this->orderId) && $count < 10) {
+        while($this->isOrderLocked($this->orderId) && $count < 3) {
             sleep(1);
             $count++;
         }
@@ -304,7 +304,6 @@ class ReceiptDataProvider
         return $this->cache->load($identifier)?true:false;
     }
 
-
     protected function processOrder($paymentVerified)
     {
         $orderState = $this->opHelper->getDefaultOrderStatus();
@@ -331,10 +330,12 @@ class ReceiptDataProvider
     {
         if ($this->currentOrder->canInvoice()) {
             try {
-                $invoice = $this->invoiceService->prepareInvoice($this->currentOrder);
+                /** @var /Magento/Sales/Api/Data/InvoiceInterface|/Magento/Sales/Model/Order/Invoice $invoice */
+                $invoice = $this->invoiceService->prepareInvoice($this->currentOrder); //TODO: catch \InvalidArgumentException which extends \Exception
                 $invoice->setRequestedCaptureCase(\Magento\Sales\Model\Order\Invoice::CAPTURE_ONLINE);
                 $invoice->setTransactionId($this->currentOrderPayment->getLastTransId());
                 $invoice->register();
+                /** @var /Magento/Framework/DB/Transaction $transactionSave */
                 $transactionSave = $this->transactionFactory->create();
                 $transactionSave->addObject(
                     $invoice
@@ -342,7 +343,7 @@ class ReceiptDataProvider
                     $this->currentOrder
                 )->save();
             } catch (LocalizedException $exception) {
-                $invoiceFailException = $exception->getMessage();
+                $invoiceFailException = $exception->getMessage(); //TODO: log errors
             }
 
             if (isset($invoiceFailException)) {
@@ -351,10 +352,16 @@ class ReceiptDataProvider
         }
     }
 
+    /**
+     * @param bool|string $paymentVerified
+     */
     protected function processPayment($paymentVerified = false)
     {
         if ($paymentVerified === 'ok') {
+
+            /** @var \Magento\Sales\Model\Order\Payment\Transaction\Builder|null $transaction */
             $transaction = $this->addPaymentTransaction($this->currentOrder, $this->transactionId, $this->getDetails());
+
             $this->currentOrderPayment->addTransactionCommentsToOrder($transaction, '');
             $this->currentOrderPayment->setLastTransId($this->transactionId);
 
@@ -419,11 +426,14 @@ class ReceiptDataProvider
 
     protected function loadTransaction()
     {
-        return $transaction = $this->transactionRepository->getByTransactionId(
+        /** @var bool|mixed $transaction */
+        $transaction = $this->transactionRepository->getByTransactionId(
             $this->transactionId,
             $this->currentOrder->getPayment()->getId(),
             $this->orderId
         );
+
+        return $transaction;
     }
 
     protected function processExistingTransaction($transaction)
@@ -434,6 +444,9 @@ class ReceiptDataProvider
         }
     }
 
+    /**
+     * @return bool
+     */
     protected function processTransaction()
     {
         $transaction = $this->loadTransaction();
@@ -444,10 +457,19 @@ class ReceiptDataProvider
         return true;
     }
 
+    /**
+     * @param \Magento\Sales\Model\Order $order
+     * @param $transactionId
+     * @param array $details
+     * @return transactionBuilder|null
+     */
     protected function addPaymentTransaction(\Magento\Sales\Model\Order $order, $transactionId, array $details = [])
     {
+        /** @var null|\Magento\Sales\Model\Order\Payment\Transaction\Builder $transaction */
         $transaction = null;
+        /** @var \Magento\Framework\DataObject|\Magento\Sales\Api\Data\OrderPaymentInterface |mixed|null $payment */
         $payment = $order->getPayment();
+
         $transaction = $this->transactionBuilder
             ->setPayment($payment)->setOrder($order)
             ->setTransactionId($transactionId)
