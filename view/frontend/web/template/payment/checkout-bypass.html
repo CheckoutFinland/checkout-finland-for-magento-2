@@ -9,7 +9,8 @@
             <span data-bind="text: getTitle()"></span>
             <div class="checkout-logo">
                 <div class="checkout-logo-container">
-                    <img src="https://cdn2.hubspot.net/hubfs/2610868/Logot/op-logo-30x30px.png" alt="OP Payment Service">
+                    <img src="https://cdn2.hubspot.net/hubfs/2610868/Logot/op-logo-30x30px.png"
+                         alt="OP Payment Service">
                 </div>
             </div>
         </label>
@@ -23,35 +24,58 @@
             <!-- ko template: getTemplate() --><!-- /ko -->
             <!--/ko-->
         </div>
+        <div class="checkout-payment-terms-container">
+            <span data-bind="html: getTerms()"></span>
+        </div>
+
+        <div class="checkout-payment-methods">
+            <!-- Collapsible elements for payment groups-->
+            <div id='accordion-element' class="checkout-payment-groups"
+                 data-bind="mageInit: {'accordion':{'collapsible': true, 'openedState': 'active', 'active': '1'}}">
+                <!-- ko foreach:  { data: getMethodGroups(), as: 'methodGroup' } -->
+                <div class='checkout-group-collapsible' data-role='collapsible'
+                     data-bind="attr: {id: methodGroup['id']}">
+                    <div class="checkout-group-header-wrapper" data-role="trigger">
+                        <div class="checkout-group-title">
+                            <!-- ko if: $parent.getGroupIcon(methodGroup['id']) -->
+                            <img class="checkout-group-logo" data-bind="attr: {src: $parent.getGroupIcon(methodGroup['id'])}"/>
+                            <!--/ko-->
+                            <span data-bind="text: name"></span>
+                        </div>
+                        <div class="checkout-group-method-list" >
+                            <ul>
+                                <!-- ko foreach: methodGroup['providers'], as: 'paymentMethod' -->
+                                <li data-bind="text: name"></li>
+                                <!--/ko-->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div data-role="content" class="checkout-group-wrapper">
+                    <!-- ko foreach: methodGroup['providers'], as: 'paymentMethod' -->
+                    <div class="checkout-payment-method" data-bind="
+                  attr: {id: 'checkout-payment-method-' + id},
+                  css: { active: $parents[1].selectedPaymentMethodId() == id },
+                  click: $parents[1].setPaymentMethodId">
+                        <div class="checkout-payment-method-logo">
+                            <img data-bind="attr: { src: icon }">
+                        </div>
+                        <div class="checkout-payment-method-title" data-bind="text: name"></div>
+                        <div>
+                            <input type="radio"
+                                   data-bind="attr: {value: id}, checked: $parents[1].selectedPaymentMethodId"/>
+                        </div>
+                    </div>
+                    <!--/ko-->
+                </div>
+
+                <!-- /ko -->
+            </div>
+        </div>
         <div class="checkout-agreements-block">
             <!-- ko foreach: $parent.getRegion('before-place-order') -->
             <!-- ko template: getTemplate() --><!-- /ko -->
             <!--/ko-->
-        </div>
-        <div class="checkout-payment-methods">
-            <!-- ko foreach:  { data: getMethodGroups(), as: 'methodGroup' } -->
-            <div>
-                <div class="checkout-group-title">
-                    <span data-bind="text: title"></span>
-                </div>
-                <!-- ko foreach: methodGroup['methods'], as: 'paymentMethod' -->
-                <div class="checkout-payment-method" data-bind="
-                  attr: {id: 'checkout-payment-method-' + id},
-                  css: { active: $parents[1].selectedPaymentMethodId() == id },
-                  click: $parents[1].setPaymentMethodId
-                  "
-                >
-                    <div class="checkout-payment-method-logo">
-                        <img data-bind="attr: { src: icon }">
-                    </div>
-                    <div class="checkout-payment-method-title" data-bind="text: title"></div>
-                    <div>
-                        <input type="radio" data-bind="attr: {value: id}, checked: $parents[1].selectedPaymentMethodId" />
-                    </div>
-                </div>
-                <!--/ko-->
-            </div>
-            <!-- /ko -->
         </div>
         <div class="actions-toolbar">
             <div class="primary">

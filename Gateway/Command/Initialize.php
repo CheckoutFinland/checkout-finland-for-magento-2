@@ -15,9 +15,11 @@ class Initialize implements CommandInterface
 
     public function execute(array $commandSubject)
     {
+        /** @var \Magento\Payment\Gateway\Data\PaymentDataObjectInterface $payment */
         $payment = \Magento\Payment\Gateway\Helper\SubjectReader::readPayment($commandSubject);
         $stateObject = \Magento\Payment\Gateway\Helper\SubjectReader::readStateObject($commandSubject);
 
+        /** @var \Magento\Payment\Model\InfoInterface $payment */
         $payment = $payment->getPayment();
         $payment->setIsTransactionPending(true);
         $payment->setIsTransactionIsClosed(false);
