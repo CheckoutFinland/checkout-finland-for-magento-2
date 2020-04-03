@@ -71,3 +71,5 @@ Shipping,Toimitus
 "Pending payment from OP Payment Service","Odottaa maksua OP Payment Servicestä"
 "Order canceled. Failed to redirect to OP Payment Service.","Tilaus peruutettu. Ohjausta OP Payment Serviceen ei voitu tehdä"
 "Op Payment Service API credentials are incorrect. Please contact support.","Op Payment Service tunnuksia ei löytynyt. Ole hyvä, ja ota yhteyttä asiakaspalveluun."
+"By confirming this purchase, you consent to the","Maksamalla tilauksen hyväksyt"
+"terms of the payment service","maksupalveluehdot"

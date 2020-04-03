@@ -24,13 +24,17 @@ define(
     function (ko, $, _, storage, Component, placeOrderAction, selectPaymentMethodAction, additionalValidators, quote, getTotalsAction, urlBuilder, mageUrlBuilder, fullScreenLoader, customer, checkoutData, totals, messageList, $t) {
         'use strict';
         var self;
+        var checkoutConfig = window.checkoutConfig.payment;
+
         return Component.extend({
             defaults: {
-                template: window.checkoutConfig.payment.payment_template.opcheckout
+                template: checkoutConfig.opcheckout.payment_template
+
             },
+            payMethod: 'opcheckout',
             redirectAfterPlaceOrder: false,
             selectedPaymentMethodId: ko.observable(0),
-            selectedMethodGroup: ko.observable('bank'),
+            selectedMethodGroup: ko.observable('mobile'),
 
             initialize: function () {
                 self = this;
@@ -40,6 +44,8 @@ define(
                 }
                 if (this.getPaymentPageBypass()) {
                     this.initPaymentPageBypass();
+
+                    $("<style type='text/css'>" + self.getPaymentMethodStyles() + "</style>").appendTo("head");
 
                     this.selectedMethodGroup.subscribe(function (groupId) {
                         // Find group
@@ -77,19 +83,32 @@ define(
             },
 
             getInstructions: function () {
-                return window.checkoutConfig.payment.instructions[this.item.method];
+                return checkoutConfig[self.payMethod].instructions;
             },
 
             getIsSuccess: function () {
-                return window.checkoutConfig.payment.success.opcheckout;
+                return checkoutConfig[self.payMethod].success;
+            },
+            //Get icon for payment group by group id
+            getGroupIcon: function(group) {
+
+                return checkoutConfig[self.payMethod].image[group];
             },
 
             getPaymentPageBypass: function () {
-                return window.checkoutConfig.payment.use_bypass[this.item.method];
+                return checkoutConfig[self.payMethod].use_bypass;
+            },
+
+            getPaymentMethodStyles: function() {
+                return checkoutConfig[self.payMethod].payment_method_styles;
             },
 
             getMethodGroups: function () {
-                return window.checkoutConfig.payment.method_groups[this.item.method];
+                return checkoutConfig[self.payMethod].method_groups;
+            },
+
+            getTerms: function () {
+                return checkoutConfig[self.payMethod].payment_terms;
             },
 
             selectPaymentMethod: function () {
@@ -97,7 +116,6 @@ define(
                     self.selectedMethodGroup(this.id);
                     $.cookie('checkoutSelectedPaymentMethodGroup', this.id);
                 }
-
                 selectPaymentMethodAction(self.getData());
                 checkoutData.setSelectedPaymentMethod(self.item.method);
 
@@ -110,7 +128,7 @@ define(
                 });
             },
             getBypassPaymentRedirectUrl: function () {
-                return window.checkoutConfig.payment.payment_redirect_url[this.item.method];
+                return checkoutConfig[self.payMethod].payment_redirect_url;
             },
             scrollTo: function () {
                 var errorElement_offset;
