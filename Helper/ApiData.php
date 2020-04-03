@@ -360,7 +360,7 @@ class ApiData
 
         foreach ($this->itemArgs($order) as $i => $item) {
             $items[] = array(
-                'unitPrice' => $item['price'] * 100,
+                'unitPrice' => round($item['price'] * 100),
                 'units' => $item['amount'],
                 'vatPercentage' => $item['vat'],
                 'description' => $item['title'],
