@@ -4,6 +4,9 @@ namespace Op\Checkout\Logger\Request;
 
 use Monolog\Logger;
 
+/**
+ * Class Request
+ */
 class Request extends \Magento\Framework\Logger\Handler\Base
 {
     /**

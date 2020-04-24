@@ -12,7 +12,6 @@ class Initialize implements CommandInterface
         $this->opHelper = $opHelper;
     }
 
-
     public function execute(array $commandSubject)
     {
         /** @var \Magento\Payment\Gateway\Data\PaymentDataObjectInterface $payment */

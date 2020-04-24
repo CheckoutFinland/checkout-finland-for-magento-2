@@ -12,6 +12,7 @@ use \Psr\Log\LoggerInterface;
  */
 class Index extends \Magento\Framework\App\Action\Action
 {
+
     protected $urlBuilder;
     protected $checkoutSession;
     protected $orderFactory;
@@ -62,6 +63,9 @@ class Index extends \Magento\Framework\App\Action\Action
         parent::__construct($context);
     }
 
+    /**
+     * @return mixed
+     */
     public function execute()
     {
 
@@ -125,6 +129,11 @@ class Index extends \Magento\Framework\App\Action\Action
         ]);
     }
 
+    /**
+     * @param $responseData
+     * @param $paymentMethodId
+     * @return array
+     */
     protected function getFormFields($responseData, $paymentMethodId = null)
     {
         $formFields = [];
@@ -140,6 +149,11 @@ class Index extends \Magento\Framework\App\Action\Action
         return $formFields;
     }
 
+    /**
+     * @param $responseData
+     * @param $paymentMethodId
+     * @return string
+     */
     protected function getFormAction($responseData, $paymentMethodId = null)
     {
         $returnUrl = '';
@@ -153,6 +167,10 @@ class Index extends \Magento\Framework\App\Action\Action
         return $returnUrl;
     }
 
+    /**
+     * @param $order
+     * @return mixed
+     */
     protected function getResponseData($order)
     {
         $uri = '/payments';
