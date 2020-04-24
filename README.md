@@ -16,7 +16,7 @@ This payment module has the following features:
 Steps:
 1. Download module from GitHub
 2. Place the module files into the app/code/Op/Checkout directory within the magento installation
-3. Run the following commands: <br/>```php bin/magento setup:upgrade``` <br/>```php bin/magento setup:di:compile``` <br/>```bin/magento setup:static-content:deploy``` 
+3. Run the following commands: <br/> ``` php bin/magento module:enable Op_Checkout ``` <br/> ```php bin/magento setup:upgrade``` <br/>```php bin/magento setup:di:compile``` <br/>```bin/magento setup:static-content:deploy``` 
 4. Navigate to Magento admin interface and select __Stores -> Store Configuration -> Sales -> Payment Methods -> OP Payment Service__
 5. Enter your credentials and enable the module (Checkout test credentials: _375917 - SAIPPUAKAUPPIAS_)
 6. Clear the cache 
