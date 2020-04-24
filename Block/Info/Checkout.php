@@ -6,8 +6,14 @@ use Op\Checkout\Helper\Data;
 use Op\Checkout\Gateway\Config\Config;
 use Magento\Store\Model\StoreManagerInterface;
 
+/**
+ * Class Checkout
+ */
 class Checkout extends \Magento\Payment\Block\Info
 {
+    /**
+     * @var string
+     */
     protected $_template = 'Op_Checkout::info/checkout.phtml';
     /**
      * @var Config
@@ -38,6 +44,9 @@ class Checkout extends \Magento\Payment\Block\Info
         $this->storeManager = $storeManager;
     }
 
+    /**
+     * @return mixed
+     */
     public function getOpCheckoutLogo()
     {
         return $this->_scopeConfig->getValue(

@@ -14,6 +14,9 @@ use Magento\Framework\View\Asset\Repository as AssetRepository;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\Locale\Resolver;
 
+/**
+ * Class ConfigProvider
+ */
 class ConfigProvider implements ConfigProviderInterface
 {
     const CODE = 'opcheckout';
@@ -65,8 +68,7 @@ class ConfigProvider implements ConfigProviderInterface
         AssetRepository $assetRepository,
         StoreManagerInterface $storeManager,
         Resolver $localeResolver
-    )
-    {
+    ) {
         $this->ophelper = $ophelper;
         $this->apidata = $apidata;
         $this->checkoutSession = $checkoutSession;
@@ -79,6 +81,9 @@ class ConfigProvider implements ConfigProviderInterface
         }
     }
 
+    /**
+     * @return array
+     */
     public function getConfig()
     {
         $storeId = $this->storeManager->getStore()->getId();
@@ -140,6 +145,9 @@ class ConfigProvider implements ConfigProviderInterface
         return $styles;
     }
 
+    /**
+     * @return string
+     */
     protected function getPaymentRedirectUrl()
     {
         return 'opcheckout/redirect';
