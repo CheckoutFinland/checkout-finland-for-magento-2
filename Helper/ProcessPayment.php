@@ -3,13 +3,13 @@
 namespace Op\Checkout\Helper;
 
 use Magento\Checkout\Model\Session;
+use Magento\Framework\App\CacheInterface;
 use Magento\Quote\Model\QuoteRepository;
+use Op\Checkout\Gateway\Config\Config;
 use Op\Checkout\Gateway\Validator\ResponseValidator;
 use Op\Checkout\Model\CheckoutException;
-use Op\Checkout\Model\TransactionSuccessException;
 use Op\Checkout\Model\ReceiptDataProvider;
-use Magento\Framework\App\CacheInterface;
-
+use Op\Checkout\Model\TransactionSuccessException;
 
 /**
  * Class ProcessPayment
@@ -39,22 +39,38 @@ class ProcessPayment
     private $cache;
 
     /**
+     * @var Config
+     */
+    private $gatewayConfig;
+
+    /**
+     * @var Data
+     */
+    private $opHelper;
+
+    /**
      * ProcessPayment constructor.
      * @param ResponseValidator $responseValidator
      * @param ReceiptDataProvider $receiptDataProvider
      * @param QuoteRepository $quoteRepository
      * @param CacheInterface $cache
+     * @param Config $gatewayConfig
+     * @param Data $opHelper
      */
     public function __construct(
         ResponseValidator $responseValidator,
         ReceiptDataProvider $receiptDataProvider,
         QuoteRepository $quoteRepository,
-        CacheInterface $cache
+        CacheInterface $cache,
+        Config $gatewayConfig,
+        Data $opHelper
     ) {
         $this->responseValidator = $responseValidator;
         $this->receiptDataProvider = $receiptDataProvider;
         $this->quoteRepository = $quoteRepository;
         $this->cache = $cache;
+        $this->gatewayConfig = $gatewayConfig;
+        $this->opHelper = $opHelper;
     }
 
     /**
@@ -82,13 +98,18 @@ class ProcessPayment
             return $errors;
         }
 
-        /** @var int|string|null $orderNo */
-        $orderNo = $params['checkout-reference'];
+        /** @var string $reference */
+        $reference = $params['checkout-reference'];
+
+        /** @var string $orderNo */
+        $orderNo = $this->gatewayConfig->getGenerateReferenceForOrder()
+            ? $this->opHelper->getIdFromOrderReferenceNumber($reference)
+            : $reference;
 
         /** @var int $count */
         $count = 0;
         while ($this->isPaymentLocked($orderNo) && $count < 5) {
-            $count ++;
+            $count++;
             sleep($count);
         }
 
@@ -179,10 +200,11 @@ class ProcessPayment
      * @param int $orderId
      * @return bool
      */
-    protected function isPaymentLocked($orderId) {
+    protected function isPaymentLocked($orderId)
+    {
         /** @var string $identifier */
         $identifier = self::PAYMENT_PROCESSING_CACHE_PREFIX . $orderId;
 
-        return $this->cache->load($identifier)?true:false;
+        return $this->cache->load($identifier) ? true : false;
     }
 }

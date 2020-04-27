@@ -66,6 +66,11 @@
                     <comment>Log file: var/log/op_payment_service_request.log</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="generate_reference" translate="label" type="select" sortOrder="60" showInDefault="1"
+                       showInWebsite="0" showInStore="0" canRestore="1">
+                    <label>Generate Finnish reference number for orders</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
                 <group id="op_personalization" translate="label" type="text" sortOrder="90" showInDefault="1"
                        showInWebsite="1" showInStore="1">
                     <label>Payment page personalization</label>
