@@ -2,6 +2,9 @@
 
 namespace Op\Checkout\Helper;
 
+/**
+ * Class Signature
+ */
 class Signature
 {
     /**
@@ -19,6 +22,12 @@ class Signature
         $this->log = $log;
     }
 
+    /**
+     * @param array $params
+     * @param null $body
+     * @param null $secretKey
+     * @return string
+     */
     public function calculateHmac(array $params = [], $body = null, $secretKey = null)
     {
         // Keep only checkout- params, more relevant for response validation.
@@ -39,7 +48,12 @@ class Signature
         return hash_hmac('sha256', join("\n", $hmacPayload), $secretKey);
     }
 
-
+    /**
+     * @param array $params
+     * @param null $body
+     * @param null $signature
+     * @param null $secretKey
+     */
     public function validateHmac(
         array $params = [],
         $body = null,

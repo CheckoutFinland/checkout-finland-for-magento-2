@@ -10,7 +10,6 @@ use Magento\Framework\DB\TransactionFactory;
 
 /**
  * Class ActivateOrder
- * @package Op\Checkout\Helper
  */
 class ActivateOrder
 {
@@ -101,7 +100,10 @@ class ActivateOrder
         }
     }
 
-
+    /**
+     * @param $order
+     * @return mixed
+     */
     protected function getCaptureTransaction($order)
     {
         $transactionId = false;
@@ -114,6 +116,9 @@ class ActivateOrder
         return $transactionId;
     }
 
+    /**
+     * @param $order
+     */
     protected function processInvoice($order)
     {
         $transactionId = $this->getCaptureTransaction($order);
@@ -139,5 +144,4 @@ class ActivateOrder
             }
         }
     }
-
 }

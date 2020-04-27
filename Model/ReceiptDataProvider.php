@@ -297,13 +297,17 @@ class ReceiptDataProvider
      * @param int $orderId
      * @return bool
      */
-    protected function isOrderLocked($orderId) {
+    protected function isOrderLocked($orderId)
+    {
         /** @var string $identifier */
         $identifier = self::RECEIPT_PROCESSING_CACHE_PREFIX . $orderId;
 
         return $this->cache->load($identifier)?true:false;
     }
 
+    /**
+     * @param $paymentVerified
+     */
     protected function processOrder($paymentVerified)
     {
         $orderState = $this->opHelper->getDefaultOrderStatus();
@@ -326,6 +330,9 @@ class ReceiptDataProvider
         }
     }
 
+    /**
+     * process invoice
+     */
     protected function processInvoice()
     {
         if ($this->currentOrder->canInvoice()) {
@@ -371,6 +378,9 @@ class ReceiptDataProvider
         }
     }
 
+    /**
+     * notify canceled order
+     */
     protected function notifyCanceledOrder()
     {
         if (filter_var($this->opHelper->getNotificationEmail(), FILTER_VALIDATE_EMAIL)) {
@@ -390,6 +400,9 @@ class ReceiptDataProvider
         }
     }
 
+    /**
+     * @return array
+     */
     protected function getDetails()
     {
         return [
@@ -399,6 +412,9 @@ class ReceiptDataProvider
         ];
     }
 
+    /**
+     * @return mixed
+     */
     protected function loadOrder()
     {
         $order = $this->orderInterface->loadByIncrementId($this->orderIncrementalId);
@@ -424,6 +440,9 @@ class ReceiptDataProvider
         return $verifiedPayment;
     }
 
+    /**
+     * @return bool|mixed
+     */
     protected function loadTransaction()
     {
         /** @var bool|mixed $transaction */
@@ -436,6 +455,9 @@ class ReceiptDataProvider
         return $transaction;
     }
 
+    /**
+     * @param $transaction
+     */
     protected function processExistingTransaction($transaction)
     {
         $details = $transaction->getAdditionalInformation(Transaction::RAW_DETAILS);
@@ -497,6 +519,12 @@ class ReceiptDataProvider
         throw new TransactionSuccessException(__('All fine'));
     }
 
+    /**
+     * @param $signature
+     * @param $status
+     * @param $params
+     * @return bool
+     */
     protected function verifyPayment($signature, $status, $params)
     {
         $hmac = $this->signature->calculateHmac($params, '', $this->opHelper->getMerchantSecret());
