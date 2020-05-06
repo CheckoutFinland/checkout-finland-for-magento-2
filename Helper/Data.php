@@ -243,6 +243,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function calculateOrderReferenceNumber($incrementId)
     {
+        $prefix = '1';
         $sum = 0;
         $length = strlen($incrementId);
 
@@ -250,7 +251,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $sum += substr($incrementId, -1 - $i, 1) * [7, 3, 1][$i % 3];
         }
         $num = (10 - $sum % 10) % 10;
-        $referenceNum = ltrim($incrementId . $num, '0');
+        $referenceNum = $prefix . $incrementId . $num;
 
         return trim(chunk_split($referenceNum, 5, ' '));
     }
@@ -258,12 +259,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get order increment id from checkout reference number
      * @param string $reference
-     * @return string|bool|null
+     * @return string|null
      */
     public function getIdFromOrderReferenceNumber($reference)
     {
-        $trimmed = preg_replace('/\s+/', '', substr($reference, 0, -1));
-
-        return str_pad($trimmed, 9, '0', STR_PAD_LEFT);
+        return preg_replace('/\s+/', '', substr($reference, 1, -1));
     }
 }
