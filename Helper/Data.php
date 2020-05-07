@@ -235,4 +235,34 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
         return $locale;
     }
+
+    /**
+     * Calculate Finnish reference number from order increment id
+     * @param string $incrementId
+     * @return string
+     */
+    public function calculateOrderReferenceNumber($incrementId)
+    {
+        $prefix = '1';
+        $sum = 0;
+        $length = strlen($incrementId);
+
+        for ($i = 0; $i < $length; ++$i) {
+            $sum += substr($incrementId, -1 - $i, 1) * [7, 3, 1][$i % 3];
+        }
+        $num = (10 - $sum % 10) % 10;
+        $referenceNum = $prefix . $incrementId . $num;
+
+        return trim(chunk_split($referenceNum, 5, ' '));
+    }
+
+    /**
+     * Get order increment id from checkout reference number
+     * @param string $reference
+     * @return string|null
+     */
+    public function getIdFromOrderReferenceNumber($reference)
+    {
+        return preg_replace('/\s+/', '', substr($reference, 1, -1));
+    }
 }

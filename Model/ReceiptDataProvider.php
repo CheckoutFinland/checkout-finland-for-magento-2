@@ -5,24 +5,23 @@ use Magento\Checkout\Model\Session;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\CacheInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\DB\TransactionFactory;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Mail\Template\TransportBuilder;
+use Magento\Sales\Api\Data\OrderInterface;
+use Magento\Sales\Api\OrderManagementInterface;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Api\OrderStatusHistoryRepositoryInterface;
 use Magento\Sales\Api\TransactionRepositoryInterface;
 use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 use Magento\Sales\Model\Order\Payment\Transaction;
 use Magento\Sales\Model\Order\Payment\Transaction\Builder as transactionBuilder;
 use Magento\Sales\Model\Order\Payment\Transaction\BuilderInterface as transactionBuilderInterface;
-use Magento\Framework\Mail\Template\TransportBuilder;
-use Magento\Sales\Api\OrderManagementInterface;
-use Magento\Tests\NamingConvention\true\mixed;
+use Magento\Sales\Model\Service\InvoiceService;
+use Op\Checkout\Gateway\Config\Config;
+use Op\Checkout\Gateway\Validator\ResponseValidator;
 use Op\Checkout\Helper\Data as opHelper;
 use Op\Checkout\Helper\Signature;
-use Magento\Sales\Api\OrderRepositoryInterface;
-use Op\Checkout\Gateway\Validator\ResponseValidator;
-use Op\Checkout\Gateway\Request\Capture as opCapture;
-use Magento\Sales\Model\Service\InvoiceService;
-use Magento\Sales\Api\OrderStatusHistoryRepositoryInterface;
-use Magento\Framework\DB\TransactionFactory;
-use Magento\Sales\Api\Data\OrderInterface;
 
 /**
  * Class ReceiptDataProvider
@@ -85,11 +84,6 @@ class ReceiptDataProvider
      * @var transactionBuilderInterface
      */
     protected $transactionBuilderInterface;
-
-    /**
-     * @var opCapture
-     */
-    protected $opCapture;
 
     /**
      * @var Signature
@@ -165,6 +159,10 @@ class ReceiptDataProvider
      * @var null|string
      */
     protected $paramsMethod;
+    /**
+     * @var Config
+     */
+    private $gatewayConfig;
 
     /**
      * ReceiptDataProvider constructor.
@@ -179,7 +177,6 @@ class ReceiptDataProvider
      * @param OrderRepositoryInterface $orderRepositoryInterface
      * @param transactionBuilderInterface $transactionBuilderInterface
      * @param CacheInterface $cache
-     * @param opCapture $opCapture
      * @param Signature $signature
      * @param InvoiceService $invoiceService
      * @param OrderStatusHistoryRepositoryInterface $orderStatusHistoryRepository
@@ -187,6 +184,7 @@ class ReceiptDataProvider
      * @param opHelper $opHelper
      * @param OrderInterface $orderInterface
      * @param transactionBuilder $transactionBuilder
+     * @param Config $gatewayConfig
      */
     public function __construct(
         Context $context,
@@ -200,14 +198,14 @@ class ReceiptDataProvider
         OrderRepositoryInterface $orderRepositoryInterface,
         transactionBuilderInterface $transactionBuilderInterface,
         CacheInterface $cache,
-        opCapture $opCapture,
         Signature $signature,
         InvoiceService $invoiceService,
         OrderStatusHistoryRepositoryInterface $orderStatusHistoryRepository,
         TransactionFactory $transactionFactory,
         opHelper $opHelper,
         OrderInterface $orderInterface,
-        transactionBuilder $transactionBuilder
+        transactionBuilder $transactionBuilder,
+        Config $gatewayConfig
     ) {
         $this->urlBuilder = $context->getUrl();
         $this->cache = $cache;
@@ -221,7 +219,6 @@ class ReceiptDataProvider
         $this->responseValidator = $responseValidator;
         $this->orderRepositoryInterface = $orderRepositoryInterface;
         $this->transactionBuilderInterface = $transactionBuilderInterface;
-        $this->opCapture = $opCapture;
         $this->signature = $signature;
         $this->invoiceService = $invoiceService;
         $this->orderStatusHistoryRepository = $orderStatusHistoryRepository;
@@ -229,6 +226,7 @@ class ReceiptDataProvider
         $this->opHelper = $opHelper;
         $this->orderInterface = $orderInterface;
         $this->transactionBuilder = $transactionBuilder;
+        $this->gatewayConfig = $gatewayConfig;
     }
 
     /* MOST OF THE LOGIC GOES HERE! */
@@ -238,7 +236,15 @@ class ReceiptDataProvider
      */
     public function execute(array $params)
     {
-        $this->orderIncrementalId   =   $params["checkout-reference"];
+        if ($this->gatewayConfig->getGenerateReferenceForOrder()) {
+            $this->orderIncrementalId
+                = $this->opHelper->getIdFromOrderReferenceNumber(
+                $params["checkout-reference"]
+            );
+        } else {
+            $this->orderIncrementalId
+                = $params["checkout-reference"];
+        }
         $this->transactionId        =   $params["checkout-transaction-id"];
         $this->paramsStamp          =   $params['checkout-stamp'];
         $this->paramsMethod         =   $params['checkout-provider'];
@@ -251,7 +257,7 @@ class ReceiptDataProvider
         /** @var int $count */
         $count = 0;
 
-        while($this->isOrderLocked($this->orderId) && $count < 3) {
+        while ($this->isOrderLocked($this->orderId) && $count < 3) {
             sleep(1);
             $count++;
         }
@@ -302,7 +308,7 @@ class ReceiptDataProvider
         /** @var string $identifier */
         $identifier = self::RECEIPT_PROCESSING_CACHE_PREFIX . $orderId;
 
-        return $this->cache->load($identifier)?true:false;
+        return $this->cache->load($identifier) ? true : false;
     }
 
     /**

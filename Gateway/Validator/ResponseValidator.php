@@ -43,10 +43,6 @@ class ResponseValidator extends AbstractValidator
         $isValid = true;
         $fails = [];
 
-        if ($this->validateOrderId($validationSubject["checkout-reference"]) == false) {
-            $fails[] = "OrderId is invalid";
-        }
-
         if ($this->isRequestMerchantIdEmpty($this->opHelper->getMerchantId())) {
             $fails[] = "Request MerchantId is empty";
         }
@@ -71,15 +67,6 @@ class ResponseValidator extends AbstractValidator
             $isValid = false;
         }
         return $this->createResult($isValid, $fails);
-    }
-
-    /**
-     * @param $orderid
-     * @return bool
-     */
-    public function validateOrderId($orderid)
-    {
-        return is_numeric($orderid);
     }
 
     /**

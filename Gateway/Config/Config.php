@@ -15,6 +15,7 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     const KEY_TITLE = 'title';
     const CODE = 'opcheckout';
     const KEY_ACTIVE = 'active';
+    const KEY_GENERATE_REFERENCE = 'generate_reference';
     const KEY_PAYMENTGROUP_BG_COLOR = 'op_personalization/payment_group_bg';
     const KEY_PAYMENTGROUP_HIGHLIGHT_BG_COLOR = 'op_personalization/payment_group_highlight_bg';
     const KEY_PAYMENTGROUP_TEXT_COLOR = 'op_personalization/payment_group_text';
@@ -64,7 +65,7 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     }
 
     /**
-     * param int|null $storeId
+     * @param int|null $storeId
      * @return mixed
      */
     public function getPaymentGroupHighlightBgColor($storeId = null)
@@ -73,7 +74,7 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     }
 
     /**
-     * param int|null $storeId
+     * @param int|null $storeId
      * @return mixed
      */
     public function getPaymentGroupTextColor($storeId = null)
@@ -82,7 +83,7 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     }
 
     /**
-     * param int|null $storeId
+     * @param int|null $storeId
      * @return mixed
      */
     public function getPaymentGroupHighlightTextColor($storeId = null)
@@ -91,7 +92,7 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     }
 
     /**
-     * param int|null $storeId
+     * @param int|null $storeId
      * @return mixed
      */
     public function getPaymentGroupHoverColor($storeId = null)
@@ -100,7 +101,7 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     }
 
     /**
-     * param int|null $storeId
+     * @param int|null $storeId
      * @return mixed
      */
     public function getPaymentMethodHighlightColor($storeId = null)
@@ -109,7 +110,7 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     }
 
     /**
-     * param int|null $storeId
+     * @param int|null $storeId
      * @return mixed
      */
     public function getPaymentMethodHoverHighlight($storeId = null)
@@ -118,11 +119,20 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     }
 
     /**
-     * param int|null $storeId
+     * @param int|null $storeId
      * @return mixed
      */
     public function getAdditionalCss($storeId = null)
     {
         return $this->getValue(self::KEY_PAYMENTMETHOD_ADDITIONAL, $storeId);
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function getGenerateReferenceForOrder($storeId = null)
+    {
+        return $this->getValue(self::KEY_GENERATE_REFERENCE, $storeId);
     }
 }

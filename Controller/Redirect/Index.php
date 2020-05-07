@@ -2,50 +2,96 @@
 
 namespace Op\Checkout\Controller\Redirect;
 
+use Magento\Checkout\Model\Session;
+use Magento\Framework\App\Action\Context;
+use Magento\Framework\Controller\Result\Json;
+use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\View\Result\PageFactory;
+use Magento\Sales\Api\OrderManagementInterface;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\OrderFactory;
 use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data as opHelper;
-use \Psr\Log\LoggerInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class Index
  */
 class Index extends \Magento\Framework\App\Action\Action
 {
-
     protected $urlBuilder;
+
+    /**
+     * @var Session
+     */
     protected $checkoutSession;
+
+    /**
+     * @var OrderFactory
+     */
     protected $orderFactory;
+
+    /**
+     * @var JsonFactory
+     */
     protected $jsonFactory;
-    protected $pageFactory;
-    protected $checkout;
-    protected $orderManagementInterface;
+
+    /**
+     * @var OrderRepositoryInterface
+     */
     protected $orderRepositoryInterface;
-    protected $apiData;
-    protected $opHelper;
+
+    /**
+     * @var OrderManagementInterface
+     */
+    protected $orderManagementInterface;
+
+    /**
+     * @var PageFactory
+     */
+    protected $pageFactory;
+
+    /**
+     * @var LoggerInterface
+     */
     protected $logger;
 
     /**
+     * @var ApiData
+     */
+    protected $apiData;
+
+    /**
+     * @var opHelper
+     */
+    protected $opHelper;
+
+    protected $errorMsg = null;
+
+    /**
      * Index constructor.
-     * @param \Magento\Framework\App\Action\Context $context
-     * @param \Magento\Checkout\Model\Session $checkoutSession
-     * @param \Magento\Sales\Model\OrderFactory $orderFactory
-     * @param \Magento\Framework\Controller\Result\JsonFactory $jsonFactory
-     * @param \Magento\Sales\Api\OrderRepositoryInterface $orderRepositoryInterface
-     * @param \Magento\Sales\Api\OrderManagementInterface $orderManagementInterface
-     * @param \Magento\Framework\View\Result\PageFactory $pageFactory
+     *
+     * @param Context $context
+     * @param Session $checkoutSession
+     * @param OrderFactory $orderFactory
+     * @param JsonFactory $jsonFactory
+     * @param OrderRepositoryInterface $orderRepositoryInterface
+     * @param OrderManagementInterface $orderManagementInterface
+     * @param PageFactory  $pageFactory
      * @param LoggerInterface $logger
      * @param ApiData $apiData
      * @param opHelper $opHelper
      */
     public function __construct(
-        \Magento\Framework\App\Action\Context $context,
-        \Magento\Checkout\Model\Session $checkoutSession,
-        \Magento\Sales\Model\OrderFactory $orderFactory,
-        \Magento\Framework\Controller\Result\JsonFactory $jsonFactory,
+        Context $context,
+        Session $checkoutSession,
+        OrderFactory $orderFactory,
+        JsonFactory $jsonFactory,
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepositoryInterface,
-        \Magento\Sales\Api\OrderManagementInterface $orderManagementInterface,
-        \Magento\Framework\View\Result\PageFactory $pageFactory,
+        OrderManagementInterface $orderManagementInterface,
+        PageFactory $pageFactory,
         LoggerInterface $logger,
         ApiData $apiData,
         opHelper $opHelper
@@ -54,12 +100,12 @@ class Index extends \Magento\Framework\App\Action\Action
         $this->checkoutSession = $checkoutSession;
         $this->orderFactory = $orderFactory;
         $this->jsonFactory = $jsonFactory;
-        $this->pageFactory = $pageFactory;
-        $this->orderManagementInterface = $orderManagementInterface;
         $this->orderRepositoryInterface = $orderRepositoryInterface;
+        $this->orderManagementInterface = $orderManagementInterface;
+        $this->pageFactory = $pageFactory;
+        $this->logger = $logger;
         $this->apiData = $apiData;
         $this->opHelper = $opHelper;
-        $this->logger = $logger;
         parent::__construct($context);
     }
 
@@ -68,34 +114,51 @@ class Index extends \Magento\Framework\App\Action\Action
      */
     public function execute()
     {
-
-        /** @var \Magento\Framework\Controller\Result\Json $resultJson */
+        /** @var Json $resultJson */
         $resultJson = $this->jsonFactory->create();
 
         $order = null;
         try {
             if ($this->getRequest()->getParam('is_ajax')) {
-                $selectedPaymentMethodRaw = $this->getRequest()->getParam('preselected_payment_method_id');
-                $selectedPaymentMethodId = preg_replace('/[0-9]{1,2}$/', '', $selectedPaymentMethodRaw);
+                $selectedPaymentMethodRaw
+                    = $this->getRequest()->getParam(
+                    'preselected_payment_method_id'
+                );
+                $selectedPaymentMethodId = preg_replace(
+                    '/[0-9]{1,2}$/',
+                    '',
+                    $selectedPaymentMethodRaw
+                );
 
                 if (empty($selectedPaymentMethodId)) {
                     throw new LocalizedException(__('no payment method selected'));
                 }
 
+                /** @var Order $order */
                 $order = $this->orderFactory->create();
-                $order = $order->loadByIncrementId($this->checkoutSession->getLastRealOrderId());
+                $order = $order->loadByIncrementId(
+                    $this->checkoutSession->getLastRealOrderId()
+                );
                 $responseData = $this->getResponseData($order);
-                $formData = $this->getFormFields($responseData, $selectedPaymentMethodId);
-                $formAction = $this->getFormAction($responseData, $selectedPaymentMethodId);
+                $formData = $this->getFormFields(
+                    $responseData,
+                    $selectedPaymentMethodId
+                );
+                $formAction = $this->getFormAction(
+                    $responseData,
+                    $selectedPaymentMethodId
+                );
 
                 if ($this->opHelper->getSkipBankSelection()) {
                     $redirect_url = $responseData->href;
 
-                    return $resultJson->setData([
-                        'success' => true,
-                        'data' => 'redirect',
-                        'redirect' => $redirect_url
-                    ]);
+                    return $resultJson->setData(
+                        [
+                            'success' => true,
+                            'data' => 'redirect',
+                            'redirect' => $redirect_url
+                        ]
+                    );
                 }
 
                 $block = $this->pageFactory
@@ -105,10 +168,12 @@ class Index extends \Magento\Framework\App\Action\Action
                     ->setUrl($formAction)
                     ->setParams($formData);
 
-                return $resultJson->setData([
-                    'success' => true,
-                    'data' => $block->toHtml(),
-                ]);
+                return $resultJson->setData(
+                    [
+                        'success' => true,
+                        'data' => $block->toHtml(),
+                    ]
+                );
             }
         } catch (\Exception $e) {
             // Error will be handled below
@@ -117,20 +182,25 @@ class Index extends \Magento\Framework\App\Action\Action
 
         if ($order) {
             $this->orderManagementInterface->cancel($order->getId());
-            $order->addCommentToStatusHistory(__('Order canceled. Failed to redirect to OP Payment Service.'));
+            $order->addCommentToStatusHistory(
+                __('Order canceled. Failed to redirect to OP Payment Service.')
+            );
             $this->orderRepositoryInterface->save($order);
         }
 
         $this->checkoutSession->restoreQuote();
         $resultJson = $this->jsonFactory->create();
 
-        return $resultJson->setData([
-            'success' => false,
-        ]);
+        return $resultJson->setData(
+            [
+                'success' => false,
+                'message' => $this->errorMsg
+            ]
+        );
     }
 
     /**
-     * @param $responseData
+     * @param array $responseData
      * @param $paymentMethodId
      * @return array
      */
@@ -150,7 +220,7 @@ class Index extends \Magento\Framework\App\Action\Action
     }
 
     /**
-     * @param $responseData
+     * @param array $responseData
      * @param $paymentMethodId
      * @return string
      */
@@ -168,8 +238,9 @@ class Index extends \Magento\Framework\App\Action\Action
     }
 
     /**
-     * @param $order
+     * @param Order $order
      * @return mixed
+     * @throws LocalizedException
      */
     protected function getResponseData($order)
     {
@@ -178,11 +249,31 @@ class Index extends \Magento\Framework\App\Action\Action
         $merchantSecret = $this->opHelper->getMerchantSecret();
         $method = 'post';
 
-        $response = $this->apiData->getResponse($uri, $order, $merchantId, $merchantSecret, $method);
+        $response = $this->apiData->getResponse(
+            $uri,
+            $order,
+            $merchantId,
+            $merchantSecret,
+            $method
+        );
 
         $status = $response['status'];
-        if ($status === 422 || $status === 400 || $status === 404 || !isset($status)){
-            throw new LocalizedException(__('Connection error to Op Payment Service Api'));
+
+        if (!isset($status)) {
+            $this->errorMsg = __(
+                'There was a problem processing your order contents'
+            );
+            throw new LocalizedException(
+                __('There was a problem processing your order contents')
+            );
+        }
+        if ($status === 422 || $status === 400 || $status === 404) {
+            $this->errorMsg = __(
+                'Couldn\'t successfully establish connection to payment provider'
+            );
+            throw new LocalizedException(
+                __('Couldn\'t successfully establish connection to payment provider')
+            );
         }
         return $response['data'];
     }
