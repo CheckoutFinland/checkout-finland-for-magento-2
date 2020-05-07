@@ -3,7 +3,7 @@ Checkout Finland's payment methods for your Magento 2 web store
 
 ***Always perform a backup of your database and source code before installing any Magento 2 extensions.***
 
-This module has been tested on Magento 2.2.7< and 2.3.0< {community|commerce} versions. Compatibility with older versions cannot be guaranteed.
+This module has been tested on Magento 2.3.X {community|commerce} versions. Support for 2.2.X has ended and compatibility with older versions cannot be guaranteed.
 
 ## Features
 This payment module has the following features:
