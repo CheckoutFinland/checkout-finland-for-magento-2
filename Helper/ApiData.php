@@ -180,6 +180,9 @@ class ApiData
 
         if ($method == 'POST' && !empty($order)) {
             $body = $this->getResponseBody($order);
+            if (!$body) {
+                return null;
+            }
             if ($requestLogEnabled) {
                 $this->requestLogger->debug('Request to OP Payment Service API. Order Id: ' . $order->getId() . ', Headers: ' . json_encode($headers));
             }
@@ -301,6 +304,16 @@ class ApiData
                 'cancel' => $this->getCallbackUrl(),
             ],
         ];
+
+        foreach ($bodyData['items'] as $item) {
+            if ($item['units'] < 0) {
+                $this->log->error(
+                    'ERROR: Order item with quantity less than 0: '
+                    . $item['productCode']
+                );
+                return false;
+            }
+        }
 
         $shippingAddress = $order->getShippingAddress();
         if (!is_null($shippingAddress)) {
