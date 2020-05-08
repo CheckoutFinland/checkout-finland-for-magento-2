@@ -13,6 +13,7 @@ use Magento\Sales\Model\Order;
 use Op\Checkout\Logger\Request\Logger as RequestLogger;
 use Op\Checkout\Logger\Response\Logger as ResponseLogger;
 use Op\Checkout\Helper\Data as CheckoutHelper;
+use Op\Checkout\Gateway\Config\Config as GatewayConfig;
 use Op\Checkout\Model\CheckoutException;
 use Psr\Log\LoggerInterface;
 
@@ -97,6 +98,11 @@ class ApiData
     private $moduleList;
 
     /**
+     * @var GatewayConfig
+     */
+    private $gatewayConfig;
+
+    /**
      * ApiData constructor.
      * @param LoggerInterface $log
      * @param Signature $signature
@@ -111,6 +117,7 @@ class ApiData
      * @param CheckoutHelper $helper
      * @param Config $resourceConfig
      * @param ModuleListInterface $moduleList
+     * @param GatewayConfig $gatewayConfig
      */
     public function __construct(
         LoggerInterface $log,
@@ -125,7 +132,8 @@ class ApiData
         ResponseLogger $responseLogger,
         CheckoutHelper $helper,
         Config $resourceConfig,
-        ModuleListInterface $moduleList
+        ModuleListInterface $moduleList,
+        GatewayConfig $gatewayConfig
     ) {
         $this->log = $log;
         $this->signature = $signature;
@@ -140,6 +148,7 @@ class ApiData
         $this->helper = $helper;
         $this->resourceConfig = $resourceConfig;
         $this->moduleList = $moduleList;
+        $this->gatewayConfig = $gatewayConfig;
     }
 
     /**
@@ -171,6 +180,9 @@ class ApiData
 
         if ($method == 'POST' && !empty($order)) {
             $body = $this->getResponseBody($order);
+            if (!$body) {
+                return null;
+            }
             if ($requestLogEnabled) {
                 $this->requestLogger->debug('Request to OP Payment Service API. Order Id: ' . $order->getId() . ', Headers: ' . json_encode($headers));
             }
@@ -269,7 +281,9 @@ class ApiData
 
         $bodyData = [
             'stamp' => hash('sha256', time() . $order->getIncrementId()),
-            'reference' => $order->getIncrementId(),
+            'reference' => $this->gatewayConfig->getGenerateReferenceForOrder()
+                ? $this->helper->calculateOrderReferenceNumber($order->getIncrementId())
+                : $order->getIncrementId(),
             'amount' => $order->getGrandTotal() * 100,
             'currency' => $order->getOrderCurrencyCode(),
             'language' => $this->helper->getStoreLocaleForPaymentProvider(),
@@ -290,6 +304,16 @@ class ApiData
                 'cancel' => $this->getCallbackUrl(),
             ],
         ];
+
+        foreach ($bodyData['items'] as $item) {
+            if ($item['units'] < 0) {
+                $this->log->error(
+                    'ERROR: Order item with quantity less than 0: '
+                    . $item['productCode']
+                );
+                return false;
+            }
+        }
 
         $shippingAddress = $order->getShippingAddress();
         if (!is_null($shippingAddress)) {

@@ -11,6 +11,8 @@ use Op\Checkout\Helper\ProcessPayment;
 use Op\Checkout\Model\CheckoutException;
 use Op\Checkout\Model\TransactionSuccessException;
 use Op\Checkout\Model\ReceiptDataProvider;
+use Op\Checkout\Gateway\Config\Config;
+use Op\Checkout\Helper\Data;
 
 /**
  * Class Index
@@ -46,6 +48,14 @@ class Index extends \Magento\Framework\App\Action\Action
      * @var ProcessPayment
      */
     private $processPayment;
+    /**
+     * @var Config
+     */
+    private $gatewayConfig;
+    /**
+     * @var Data
+     */
+    private $opHelper;
 
     /**
      * Index constructor.
@@ -56,6 +66,8 @@ class Index extends \Magento\Framework\App\Action\Action
      * @param ReceiptDataProvider $receiptDataProvider
      * @param OrderInterface $orderInterface
      * @param ProcessPayment $processPayment
+     * @param Config $gatewayConfig
+     * @param Data $opHelper
      */
     public function __construct(
         Context $context,
@@ -64,7 +76,9 @@ class Index extends \Magento\Framework\App\Action\Action
         QuoteRepository $quoteRepository,
         ReceiptDataProvider $receiptDataProvider,
         OrderInterface $orderInterface,
-        ProcessPayment $processPayment
+        ProcessPayment $processPayment,
+        Config $gatewayConfig,
+        Data $opHelper
     ) {
         parent::__construct($context);
         $this->session = $session;
@@ -73,6 +87,8 @@ class Index extends \Magento\Framework\App\Action\Action
         $this->quoteRepository = $quoteRepository;
         $this->orderInterface = $orderInterface;
         $this->processPayment = $processPayment;
+        $this->gatewayConfig = $gatewayConfig;
+        $this->opHelper = $opHelper;
     }
 
     /**
@@ -87,8 +103,13 @@ class Index extends \Magento\Framework\App\Action\Action
         /** @var array $cancelStatuses */
         $cancelStatuses = ["canceled"];
 
-        /** @var int $orderNo */
-        $orderNo = $this->getRequest()->getParam('checkout-reference');
+        /** @var string $reference */
+        $reference = $this->getRequest()->getParam('checkout-reference');
+
+        /** @var string $orderNo */
+        $orderNo = $this->gatewayConfig->getGenerateReferenceForOrder()
+            ? $this->opHelper->getIdFromOrderReferenceNumber($reference)
+            : $reference;
 
         /** @var \Magento\Sales\Model\Order $order */
         $order = $this->orderInterface->loadByIncrementId($orderNo);
