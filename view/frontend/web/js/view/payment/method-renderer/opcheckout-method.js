@@ -81,7 +81,7 @@ define(
                 },
                 selectPaymentMethod: function () {
                     selectPaymentMethodAction(self.getData());
-                    checkoutData.setSelectedPaymentMethod(this.item.method);
+                    checkoutData.setSelectedPaymentMethod(self.item.method);
 
                     return true;
                 },
