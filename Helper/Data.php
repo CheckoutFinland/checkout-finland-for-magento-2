@@ -22,8 +22,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $methodCodes = [\Op\Checkout\Model\ConfigProvider::CODE];
 
-    const METHOD_ACTIVE = 'payment/opcheckout/active';
-    const PAYMENT_TITLE = 'payment/opcheckout/title';
     const MERCHANT_SECRET_PATH = 'payment/opcheckout/merchant_secret';
     const MERCHANT_ID_PATH = 'payment/opcheckout/merchant_id';
     const DEBUG_LOG = 'payment/opcheckout/debuglog';
@@ -31,10 +29,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     const REQUEST_LOG = 'payment/opcheckout/request_log';
     const DEFAULT_ORDER_STATUS = 'payment/opcheckout/order_status';
     const NOTIFICATION_EMAIL = 'payment/opcheckout/recipient_email';
-    const BYPASS_PATH = 'Op_Checkout/payment/checkout-bypass';
-    const CHECKOUT_PATH = 'Op_Checkout/payment/checkout';
-    const SKIP_BANK_SELECTION = 'payment/opcheckout/skip_bank_selection';
-
     const LOGO = 'payment/opcheckout/logo';
 
     /**
@@ -76,14 +70,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * @return mixed
      */
-    public function getMethodStatus()
-    {
-        return $this->getConfig(self::METHOD_ACTIVE);
-    }
-
-    /**
-     * @return mixed
-     */
     public function getDefaultOrderStatus()
     {
         return $this->getConfig(self::DEFAULT_ORDER_STATUS);
@@ -95,14 +81,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getDebugLoggerStatus()
     {
         return $this->getConfig(self::DEBUG_LOG);
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getTitle()
-    {
-        return $this->getConfig(self::PAYMENT_TITLE);
     }
 
     /**
@@ -166,31 +144,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
-     * @return string
-     */
-    public function getPaymentTemplate()
-    {
-        if ($this->getSkipBankSelection()) {
-            return self::CHECKOUT_PATH;
-        }
-        return self::BYPASS_PATH;
-    }
-
-    /**
      * @param $code
      * @return mixed
      */
     public function getPaymentRedirectUrl($code)
     {
         return $this->methods[$code]->getPaymentRedirectUrl();
-    }
-
-    /**
-     * @return bool
-     */
-    public function getUseBypass()
-    {
-        return true;
     }
 
     /**

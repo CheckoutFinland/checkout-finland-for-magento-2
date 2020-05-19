@@ -15,6 +15,9 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     const KEY_TITLE = 'title';
     const CODE = 'opcheckout';
     const KEY_ACTIVE = 'active';
+    const KEY_SKIP_BANK_SELECTION = 'skip_bank_selection';
+    const BYPASS_PATH = 'Op_Checkout/payment/checkout-bypass';
+    const CHECKOUT_PATH = 'Op_Checkout/payment/checkout';
     const KEY_GENERATE_REFERENCE = 'generate_reference';
     const KEY_PAYMENTGROUP_BG_COLOR = 'op_personalization/payment_group_bg';
     const KEY_PAYMENTGROUP_HIGHLIGHT_BG_COLOR = 'op_personalization/payment_group_highlight_bg';
@@ -53,6 +56,15 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     public function getTitle($storeId = null)
     {
         return $this->getValue(self::KEY_TITLE, $storeId);
+    }
+
+    /**
+     * @param null $storeId
+     * @return bool
+     */
+    public function getSkipBankSelection($storeId = null)
+    {
+        return $this->getValue(self::KEY_SKIP_BANK_SELECTION, $storeId);
     }
 
     /**
@@ -134,5 +146,17 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     public function getGenerateReferenceForOrder($storeId = null)
     {
         return $this->getValue(self::KEY_GENERATE_REFERENCE, $storeId);
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getPaymentTemplate($storeId = null)
+    {
+        if ($this->getSkipBankSelection($storeId)) {
+            return self::CHECKOUT_PATH;
+        }
+        return self::BYPASS_PATH;
     }
 }

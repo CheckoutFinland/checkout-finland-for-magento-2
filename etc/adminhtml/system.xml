@@ -40,7 +40,7 @@
                 </field>
                 <field id="skip_bank_selection" translate="label" type="select" sortOrder="1" showInDefault="1"
                        showInWebsite="1" showInStore="0" canRestore="1">
-                    <label>Skip bank selection</label>
+                    <label>Skip payment method selection</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="allowspecific" translate="label" type="allowspecific" sortOrder="50" showInDefault="1"

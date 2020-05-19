@@ -131,7 +131,8 @@ class Index extends \Magento\Framework\App\Action\Action
                 );
 
                 if (empty($selectedPaymentMethodId)) {
-                    throw new LocalizedException(__('no payment method selected'));
+                    $this->errorMsg = __('No payment method selected');
+                    throw new LocalizedException(__('No payment method selected'));
                 }
 
                 /** @var Order $order */
