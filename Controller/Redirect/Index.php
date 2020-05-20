@@ -15,6 +15,7 @@ use Magento\Sales\Model\OrderFactory;
 use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data as opHelper;
 use Psr\Log\LoggerInterface;
+use Op\Checkout\Gateway\Config;
 
 /**
  * Class Index
@@ -68,7 +69,14 @@ class Index extends \Magento\Framework\App\Action\Action
      */
     protected $opHelper;
 
+    /**
+     * @var Config
+     */
+    protected $gatewayConfig;
+
     protected $errorMsg = null;
+
+
 
     /**
      * Index constructor.
@@ -83,6 +91,7 @@ class Index extends \Magento\Framework\App\Action\Action
      * @param LoggerInterface $logger
      * @param ApiData $apiData
      * @param opHelper $opHelper
+     * @param Config $gatewayConfig
      */
     public function __construct(
         Context $context,
@@ -94,7 +103,8 @@ class Index extends \Magento\Framework\App\Action\Action
         PageFactory $pageFactory,
         LoggerInterface $logger,
         ApiData $apiData,
-        opHelper $opHelper
+        opHelper $opHelper,
+        Config $gatewayConfig
     ) {
         $this->urlBuilder = $context->getUrl();
         $this->checkoutSession = $checkoutSession;
@@ -106,6 +116,7 @@ class Index extends \Magento\Framework\App\Action\Action
         $this->logger = $logger;
         $this->apiData = $apiData;
         $this->opHelper = $opHelper;
+        $this->gatewayConfig = $gatewayConfig;
         parent::__construct($context);
     }
 
@@ -150,7 +161,7 @@ class Index extends \Magento\Framework\App\Action\Action
                     $selectedPaymentMethodId
                 );
 
-                if ($this->opHelper->getSkipBankSelection()) {
+                if ($this->gatewayConfig->getSkipBankSelection()) {
                     $redirect_url = $responseData->href;
 
                     return $resultJson->setData(

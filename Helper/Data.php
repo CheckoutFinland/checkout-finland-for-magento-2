@@ -107,13 +107,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->getConfig(self::MERCHANT_ID_PATH);
     }
 
-    /**
-     * @return mixed
-     */
-    public function getSkipBankSelection()
-    {
-        return $this->getConfig(self::SKIP_BANK_SELECTION);
-    }
 
     /**
      * @return mixed
@@ -161,16 +154,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->methods[$code]->getEnabledPaymentMethodGroups();
     }
 
-    /**
-     * @return null|string
-     */
-    public function getInstructions()
-    {
-        if ($this->getSkipBankSelection()) {
-            return "You will be redirected to OP Payment Service.";
-        }
-        return null;
-    }
 
     /**
      * @return array

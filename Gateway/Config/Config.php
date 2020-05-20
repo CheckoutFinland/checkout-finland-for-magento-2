@@ -149,6 +149,17 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     }
 
     /**
+     * @return null|string
+     */
+    public function getInstructions()
+    {
+        if ($this->getSkipBankSelection()) {
+            return "You will be redirected to OP Payment Service.";
+        }
+        return null;
+    }
+
+    /**
      * @param int|null $storeId
      * @return string
      */

@@ -97,7 +97,7 @@ class ConfigProvider implements ConfigProviderInterface
 
             $config = ['payment' => [
                 self::CODE => [
-                    'instructions' => $this->ophelper->getInstructions(),
+                    'instructions' => $this->gatewayConfig->getInstructions(),
                     'skip_method_selection' => $this->gatewayConfig->getSkipBankSelection(),
                     'payment_redirect_url' => $this->getPaymentRedirectUrl(),
                     'payment_template' => $this->gatewayConfig->getPaymentTemplate(),
