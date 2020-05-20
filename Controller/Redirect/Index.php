@@ -15,7 +15,7 @@ use Magento\Sales\Model\OrderFactory;
 use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data as opHelper;
 use Psr\Log\LoggerInterface;
-use Op\Checkout\Gateway\Config;
+use Op\Checkout\Gateway\Config\Config;
 
 /**
  * Class Index
