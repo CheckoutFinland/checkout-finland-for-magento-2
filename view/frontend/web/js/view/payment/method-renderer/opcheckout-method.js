@@ -43,90 +43,48 @@ define(
                     if (!self.getIsSuccess()) {
                         self.addErrorMessage($t('Op Payment Service API credentials are incorrect. Please contact support.'));
                     }
-                    if (this.getPaymentPageBypass()) {
-                        this.initPaymentPageBypass();
+                    if (self.getSkipMethodSelection() == true) {
+                        self.selectedPaymentMethodId(self.payMethod);
 
+                    } else {
                         $("<style type='text/css'>" + self.getPaymentMethodStyles() + "</style>").appendTo("head");
-
-                        this.selectedMethodGroup.subscribe(
-                            function (groupId) {
-                                // Find group
-                                var group = _.find(
-                                    self.getMethodGroups(), function (group) {
-                                        return groupId == group.id;
-                                    }
-                                );
-
-                                // Set first payment method as selected
-                                if (typeof group != 'undefined' && group != null) {
-                                    self.setPaymentMethodId(group.methods[0]);
-                                }
-                            }
-                        );
                     }
                 },
-
-                initPaymentPageBypass: function () {
-                    // Set default payment method group
-                    var cookieMethodGroup = $.cookie('checkoutSelectedPaymentMethodGroup');
-                    if (typeof cookieMethodGroup != 'undefined') {
-                        this.selectedMethodGroup(cookieMethodGroup);
-                    }
-
-                    // Set default payment method
-                    var cookieMethodId = $.cookie('checkoutSelectedPaymentMethodId');
-                    if (cookieMethodId) {
-                        this.selectedPaymentMethodId(cookieMethodId);
-                    }
-                },
-
                 setPaymentMethodId: function (paymentMethod) {
                     self.selectedPaymentMethodId(paymentMethod.id);
                     $.cookie('checkoutSelectedPaymentMethodId', paymentMethod.id);
 
                     return true;
                 },
-
                 getInstructions: function () {
                     return checkoutConfig[self.payMethod].instructions;
                 },
-
                 getIsSuccess: function () {
                     return checkoutConfig[self.payMethod].success;
                 },
                 //Get icon for payment group by group id
                 getGroupIcon: function (group) {
-
                     return checkoutConfig[self.payMethod].image[group];
                 },
 
-                getPaymentPageBypass: function () {
-                    return checkoutConfig[self.payMethod].use_bypass;
+                getSkipMethodSelection: function () {
+                    return checkoutConfig[self.payMethod].skip_method_selection;
                 },
-
                 getPaymentMethodStyles: function () {
                     return checkoutConfig[self.payMethod].payment_method_styles;
                 },
-
                 getMethodGroups: function () {
                     return checkoutConfig[self.payMethod].method_groups;
                 },
-
                 getTerms: function () {
                     return checkoutConfig[self.payMethod].payment_terms;
                 },
-
                 selectPaymentMethod: function () {
-                    if (typeof this.id != 'undefined') {
-                        self.selectedMethodGroup(this.id);
-                        $.cookie('checkoutSelectedPaymentMethodGroup', this.id);
-                    }
                     selectPaymentMethodAction(self.getData());
                     checkoutData.setSelectedPaymentMethod(self.item.method);
 
                     return true;
                 },
-
                 addErrorMessage: function (msg) {
                     messageList.addErrorMessage(
                         {
@@ -152,7 +110,6 @@ define(
                     );
                 },
                 validate: function () {
-                    self.initPaymentPageBypass();
                     if (self.selectedPaymentMethodId() == 0) {
                         return false;
                     } else {
@@ -161,12 +118,16 @@ define(
                 },
                 // Redirect to Checkout
                 placeOrder: function () {
-                    if (self.validate() && additionalValidators.validate()) {
-                        return self.placeOrderBypass();
+                    if (self.getSkipMethodSelection() == false) {
+                        if (self.validate() && additionalValidators.validate()) {
+                            return self.placeOrderBypass();
+                        } else {
+                            self.addErrorMessage($t('No payment method selected. Please select one.'));
+                            self.scrollTo();
+                            return false;
+                        }
                     } else {
-                        self.addErrorMessage($t('No payment method selected. Please select one.'));
-                        self.scrollTo();
-                        return false;
+                        return self.placeOrderBypass();
                     }
                 },
                 placeOrderBypass: function () {
