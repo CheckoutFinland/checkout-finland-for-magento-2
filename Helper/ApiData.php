@@ -3,18 +3,17 @@
 namespace Op\Checkout\Helper;
 
 use Magento\Config\Model\ResourceModel\Config;
+use Magento\Directory\Api\CountryInformationAcquirerInterface;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Module\ModuleListInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\UrlInterface;
-use Magento\Tax\Helper\Data as TaxHelper;
-use Magento\Directory\Api\CountryInformationAcquirerInterface;
 use Magento\Sales\Model\Order;
+use Magento\Tax\Helper\Data as TaxHelper;
+use Op\Checkout\Gateway\Config\Config as GatewayConfig;
+use Op\Checkout\Helper\Data as CheckoutHelper;
 use Op\Checkout\Logger\Request\Logger as RequestLogger;
 use Op\Checkout\Logger\Response\Logger as ResponseLogger;
-use Op\Checkout\Helper\Data as CheckoutHelper;
-use Op\Checkout\Gateway\Config\Config as GatewayConfig;
-use Op\Checkout\Model\CheckoutException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -184,7 +183,13 @@ class ApiData
                 return null;
             }
             if ($requestLogEnabled) {
-                $this->requestLogger->debug('Request to OP Payment Service API. Order Id: ' . $order->getId() . ', Headers: ' . json_encode($headers));
+                $this->requestLogger
+                    ->debug(
+                        'Request to OP Payment Service API. Order Id: '
+                        . $order->getId()
+                        . ', Headers: '
+                        . json_encode($headers)
+                    );
             }
         }
 
@@ -202,7 +207,13 @@ class ApiData
             if ($method == 'POST') {
                 $response = $client->post(self::API_ENDPOINT . $uri, ['body' => $body]);
                 if ($responseLogEnabled) {
-                    $this->responseLogger->debug('Getting response from OP Payment Service API. Order Id: ' . (!empty($order) ? $order->getId() : '-') . ', Checkout timestamp: ' . $headers['checkout-timestamp']);
+                    $this->responseLogger
+                        ->debug(
+                            'Getting response from OP Payment Service API. Order Id: '
+                            . (!empty($order) ? $order->getId() : '-')
+                            . ', Checkout timestamp: '
+                            . $headers['checkout-timestamp']
+                        );
                 }
             } else {
                 $response = $client->get(self::API_ENDPOINT . $uri, ['body' => '']);
@@ -305,14 +316,8 @@ class ApiData
             ],
         ];
 
-        foreach ($bodyData['items'] as $item) {
-            if ($item['units'] < 0) {
-                $this->log->error(
-                    'ERROR: Order item with quantity less than 0: '
-                    . $item['productCode']
-                );
-                return false;
-            }
+        if ($bodyData['items'] === null) {
+            return false;
         }
 
         $shippingAddress = $order->getShippingAddress();
@@ -378,7 +383,6 @@ class ApiData
         return $successUrl;
     }
 
-
     /**
      * @param $order
      * @return array
@@ -403,7 +407,7 @@ class ApiData
 
     /**
      * @param $order
-     * @return array
+     * @return array|null
      */
     protected function itemArgs($order)
     {
@@ -461,6 +465,16 @@ class ApiData
                 'discount' => 0,
                 'type' => 2,
             ];
+        }
+
+        foreach ($items as $item) {
+            if ($item['amount'] < 0) {
+                $this->log->error(
+                    'ERROR: Order item with quantity less than 0: '
+                    . $item['productCode']
+                );
+                return null;
+            }
         }
 
         // Add discount row
