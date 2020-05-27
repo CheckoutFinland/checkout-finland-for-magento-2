@@ -270,6 +270,7 @@ class Index extends \Magento\Framework\App\Action\Action
         );
 
         $status = $response['status'];
+        $data = $response['data'];
 
         if (!isset($status)) {
             $this->errorMsg = __(
@@ -280,12 +281,22 @@ class Index extends \Magento\Framework\App\Action\Action
             );
         }
         if ($status === 422 || $status === 400 || $status === 404) {
-            $this->errorMsg = __(
-                'Couldn\'t successfully establish connection to payment provider'
-            );
-            throw new LocalizedException(
-                __('Couldn\'t successfully establish connection to payment provider')
-            );
+
+            if (strpos($data, "Sum of purchase item amounts does not match total amount") !== false){
+                $this->errorMsg = __(
+                    'A problem occurred in order item tax calculations. Please contact store administrator.'
+                );
+                throw new LocalizedException(
+                    __('A problem occurred in order item tax calculations. Please contact store administrator.')
+                );
+            } else {
+                $this->errorMsg = __(
+                    'Couldn\'t successfully establish connection to payment provider'
+                );
+                throw new LocalizedException(
+                    __('Couldn\'t successfully establish connection to payment provider')
+                );
+            }
         }
         return $response['data'];
     }

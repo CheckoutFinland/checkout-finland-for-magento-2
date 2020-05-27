@@ -19,6 +19,7 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     const BYPASS_PATH = 'Op_Checkout/payment/checkout-bypass';
     const CHECKOUT_PATH = 'Op_Checkout/payment/checkout';
     const KEY_GENERATE_REFERENCE = 'generate_reference';
+    const KEY_RECOMMENDED_TAX_ALGORITHM = 'recommended_tax_algorithm';
     const KEY_PAYMENTGROUP_BG_COLOR = 'op_personalization/payment_group_bg';
     const KEY_PAYMENTGROUP_HIGHLIGHT_BG_COLOR = 'op_personalization/payment_group_highlight_bg';
     const KEY_PAYMENTGROUP_TEXT_COLOR = 'op_personalization/payment_group_text';
@@ -146,6 +147,15 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     public function getGenerateReferenceForOrder($storeId = null)
     {
         return $this->getValue(self::KEY_GENERATE_REFERENCE, $storeId);
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function getUseRecommendedTaxAlgorithm($storeId = null)
+    {
+        return $this->getValue(self::KEY_RECOMMENDED_TAX_ALGORITHM, $storeId);
     }
 
     /**

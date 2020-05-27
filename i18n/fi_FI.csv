@@ -76,3 +76,4 @@ Shipping,Toimitus
 "There was a problem processing your order contents","Tilauksen sisällön käsittelyssä ilmeni ongelma"
 "Couldn't successfully establish connection to payment provider","Yhteyden muodostaminen maksupalveluun epäonnisui"
 "No payment method selected","Ei valittua maksutapaa"
+"A problem occurred in order item tax calculations. Please contact store administrator.","Tilauksen verolaskennassa tapahtui ongelma. Ota yhteyttä kaupan ylläpitäjään."
