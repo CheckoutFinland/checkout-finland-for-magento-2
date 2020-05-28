@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
   <preference for="Op\Checkout\Api\RedirectInterface" type="Op\Checkout\Model\Redirect" />
+  <type name="Magento\Tax\Model\Config">
+    <plugin name="op_payment_service_tax_config_plugin" type="Op\Checkout\Plugin\Model\TaxConfigPlugin" sortOrder="1" disabled="false" />
+  </type>
   <virtualType name="SalesOrderViewWidgetContext" type="\Magento\Backend\Block\Widget\Context">
     <arguments>
       <argument name="buttonList" xsi:type="object">Op\Checkout\Block\Adminhtml\Order\View\ButtonList</argument>

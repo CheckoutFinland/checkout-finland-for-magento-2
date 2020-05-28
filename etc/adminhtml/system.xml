@@ -66,6 +66,14 @@
                     <comment>Log file: var/log/op_payment_service_request.log</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="recommended_tax_algorithm" translate="label" type="select" sortOrder="55" showInDefault="1"
+                       showInWebsite="0" showInStore="0" canRestore="1">
+                    <label>Enable unit price tax calculation algorithm</label>
+                    <comment><![CDATA[Unit price based sales tax calculation is recommended to ensure maximum compatibility.<br />
+                        Enabling this option affects only how taxes are calculated for order grand total.]]>
+                    </comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
                 <field id="generate_reference" translate="label" type="select" sortOrder="60" showInDefault="1"
                        showInWebsite="0" showInStore="0" canRestore="1">
                     <label>Generate Finnish reference number for orders</label>
