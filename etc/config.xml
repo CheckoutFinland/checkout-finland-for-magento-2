@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
   <default>
     <payment>
       <opcheckout>
@@ -23,6 +24,7 @@
         <response_log>0</response_log>
         <request_log>0</request_log>
         <generate_reference>1</generate_reference>
+        <recommended_tax_algorithm>0</recommended_tax_algorithm>
         <logo>https://cdn2.hubspot.net/hubfs/2610868/Logot/op-logo-30x30px.png</logo>
         <op_personalization>
           <payment_group_bg>#ebebeb</payment_group_bg>
