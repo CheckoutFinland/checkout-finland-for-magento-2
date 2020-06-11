@@ -5,6 +5,8 @@ namespace Op\Checkout\Helper;
 use Magento\Framework\Escaper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\Locale\Resolver;
+use Op\Checkout\Exceptions\CheckoutException;
+use Op\Checkout\Exceptions\TransactionSuccessException;
 
 /**
  * Class Data
@@ -206,5 +208,22 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getIdFromOrderReferenceNumber($reference)
     {
         return preg_replace('/\s+/', '', substr($reference, 1, -1));
+    }
+
+    /**
+     * @param $errorMessage
+     * @throws CheckoutException
+     */
+    public function processError($errorMessage)
+    {
+        throw new CheckoutException(__($errorMessage));
+    }
+
+    /**
+     * @throws TransactionSuccessException
+     */
+    public function processSuccess()
+    {
+        throw new TransactionSuccessException(__('Success'));
     }
 }
