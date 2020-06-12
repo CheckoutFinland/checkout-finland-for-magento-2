@@ -292,9 +292,7 @@ class ApiData
 
         $bodyData = [
             'stamp' => hash('sha256', time() . $order->getIncrementId()),
-            'reference' => $this->gatewayConfig->getGenerateReferenceForOrder()
-                ? $this->helper->calculateOrderReferenceNumber($order->getIncrementId())
-                : $order->getIncrementId(),
+            'reference' => $this->getReference($order),
             'amount' => $order->getGrandTotal() * 100,
             'currency' => $order->getOrderCurrencyCode(),
             'language' => $this->helper->getStoreLocaleForPaymentProvider(),
