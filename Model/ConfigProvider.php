@@ -2,17 +2,24 @@
 
 namespace Op\Checkout\Model;
 
+use GuzzleHttp\Exception\RequestException;
+use Magento\Checkout\Exception;
 use Magento\Checkout\Model\ConfigProviderInterface;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Payment\Helper\Data as PaymentHelper;
-use Op\Checkout\Helper\ApiData as apiData;
-use Op\Checkout\Helper\Data as opHelper;
-use Op\Checkout\Gateway\Config\Config;
 use Magento\Framework\View\Asset\Repository as AssetRepository;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\Locale\Resolver;
+use Op\Checkout\Exceptions\CheckoutException;
+use Op\Checkout\Helper\ApiData as apiData;
+use Op\Checkout\Helper\Data as opHelper;
+use Op\Checkout\Model\Adapter\Adapter;
+use Op\Checkout\Gateway\Config\Config;
+use OpMerchantServices\SDK\Client;
+use OpMerchantServices\SDK\Exception\HmacException;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class ConfigProvider
@@ -46,6 +53,14 @@ class ConfigProvider implements ConfigProviderInterface
      * @var Resolver
      */
     private $localeResolver;
+    /**
+     * @var Adapter
+     */
+    private $opAdapter;
+    /**
+     * @var LoggerInterface
+     */
+    private $log;
 
     /**
      * ConfigProvider constructor
@@ -57,6 +72,9 @@ class ConfigProvider implements ConfigProviderInterface
      * @param Config $gatewayConfig
      * @param AssetRepository $assetRepository
      * @param StoreManagerInterface $storeManager
+     * @param Resolver $localeResolver
+     * @param Adapter $opAdapter
+     * @param LoggerInterface $log
      * @throws LocalizedException
      */
     public function __construct(
@@ -67,7 +85,9 @@ class ConfigProvider implements ConfigProviderInterface
         Config $gatewayConfig,
         AssetRepository $assetRepository,
         StoreManagerInterface $storeManager,
-        Resolver $localeResolver
+        Resolver $localeResolver,
+        Adapter $opAdapter,
+        LoggerInterface $log
     ) {
         $this->ophelper = $ophelper;
         $this->apidata = $apidata;
@@ -76,6 +96,8 @@ class ConfigProvider implements ConfigProviderInterface
         $this->assetRepository = $assetRepository;
         $this->storeManager = $storeManager;
         $this->localeResolver = $localeResolver;
+        $this->opAdapter = $opAdapter;
+        $this->log = $log;
         foreach ($this->methodCodes as $code) {
             $this->methods[$code] = $paymentHelper->getMethodInstance($code);
         }
@@ -89,28 +111,36 @@ class ConfigProvider implements ConfigProviderInterface
         $storeId = $this->storeManager->getStore()->getId();
         $config = [];
         $status = $this->gatewayConfig->isActive($storeId);
+
+        try {
+            $opClient = $this->opAdapter->initOpMerchantClient();
+        } catch (LocalizedException $e) {
+            $config['payment'][self::CODE]['success'] = 0;
+            return $config;
+        }
         if (!$status) {
             return $config;
         }
         try {
-            $groupData = $this->getAllPaymentMethods();
+            $groupData = $this->getAllPaymentMethods($opClient);
 
-            $config = ['payment' => [
-                self::CODE => [
-                    'instructions' => $this->gatewayConfig->getInstructions(),
-                    'skip_method_selection' => $this->gatewayConfig->getSkipBankSelection(),
-                    'payment_redirect_url' => $this->getPaymentRedirectUrl(),
-                    'payment_template' => $this->gatewayConfig->getPaymentTemplate(),
-                    'method_groups' => $this->handlePaymentProviderGroupData($groupData->groups),
-                    'payment_terms' => $groupData->terms,
-                    'payment_method_styles' => $this->wrapPaymentMethodStyles($storeId)
+            $config = [
+                'payment' => [
+                    self::CODE => [
+                        'instructions' => $this->gatewayConfig->getInstructions(),
+                        'skip_method_selection' => $this->gatewayConfig->getSkipBankSelection(),
+                        'payment_redirect_url' => $this->getPaymentRedirectUrl(),
+                        'payment_template' => $this->gatewayConfig->getPaymentTemplate(),
+                        'method_groups' => $this->handlePaymentProviderGroupData($groupData['groups']),
+                        'payment_terms' => $groupData['terms'],
+                        'payment_method_styles' => $this->wrapPaymentMethodStyles($storeId)
+                    ]
                 ]
-            ]
             ];
             //Get images for payment groups
-            foreach ($groupData->groups as $group) {
-                $groupId = $group->id;
-                $groupImage = $group->svg;
+            foreach ($groupData['groups'] as $group) {
+                $groupId = $group['id'];
+                $groupImage = $group['icon'];
                 $config['payment'][self::CODE]['image'][$groupId] = '';
                 if ($groupImage) {
                     $config['payment'][self::CODE]['image'][$groupId] = $groupImage;
@@ -156,27 +186,25 @@ class ConfigProvider implements ConfigProviderInterface
     /**
      * Get all payment methods and groups with order total value
      *
-     * @return mixed
+     * @param Client $opClient
+     * @return mixed|null
      * @throws LocalizedException
      * @throws NoSuchEntityException
      */
-    protected function getAllPaymentMethods()
+    protected function getAllPaymentMethods($opClient)
     {
         $locale = $this->ophelper->getStoreLocaleForPaymentProvider();
         $orderValue = $this->checkoutSession->getQuote()->getGrandTotal();
-        $uri = '/merchants/grouped-payment-providers?amount=' . $orderValue * 100 . '&language=' . $locale;
-        $merchantId = $this->ophelper->getMerchantId();
-        $merchantSecret = $this->ophelper->getMerchantSecret();
-        $method = 'get';
 
-        $response = $this->apidata->getResponse($uri, '', $merchantId, $merchantSecret, $method);
-
-        $status = $response['status'];
-        if ($status === 422 || $status === 400 || $status === 404 || $status === 401 || !isset($status)){
-            throw new LocalizedException(__('Connection error to Op Payment Service Api'));
+        try {
+            $response = $opClient->getGroupedPaymentProviders($orderValue * 100, $locale);
+            return $response;
+        } catch (RequestException $e) {
+            $this->log->error('Connection error to OP Payment Service API: ' . $e->getMessage());
+        } catch (HmacException $e) {
+            $this->log->error('Error occurred in Hmac calculation: ' . $e->getMessage());
         }
-
-        return $response['data'];
+        throw new LocalizedException('Connection error to OP Payment Service API');
     }
 
     /**
@@ -191,12 +219,11 @@ class ConfigProvider implements ConfigProviderInterface
         $allGroups = [];
         foreach ($responseData as $group) {
             $allGroups[] = [
-                'id' => $group->id,
-                'name' => $group->name,
-                'icon' => $group->icon,
-                'svg' => $group->svg,
+                'id' => $group['id'],
+                'name' => $group['name'],
+                'icon' => $group['icon']
             ];
-            foreach ($group->providers as $provider) {
+            foreach ($group['providers'] as $provider) {
                 $allMethods[] = $provider;
             }
         }
@@ -218,14 +245,15 @@ class ConfigProvider implements ConfigProviderInterface
         $i = 1;
 
         foreach ($responseData as $key => $method) {
-            if ($method->group == $groupId) {
+
+            if ($method->getGroup() == $groupId) {
                 $methods[] = [
-                    'checkoutId' => $method->id,
-                    'id' => $method->id . $i++,
-                    'name' => $method->name,
-                    'group' => $method->group,
-                    'icon' => $method->icon,
-                    'svg' => $method->svg
+                    'checkoutId' => $method->getId(),
+                    'id' => $method->getId() . $i++,
+                    'name' => $method->getName(),
+                    'group' => $method->getGroup(),
+                    'icon' => $method->getIcon(),
+                    'svg' => $method->getSvg()
                 ];
             }
         }
