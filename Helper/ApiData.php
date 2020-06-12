@@ -556,4 +556,15 @@ class ApiData
     {
         return $this->moduleList->getOne(self::MODULE_CODE)['setup_version'];
     }
+
+    /**
+     * @param $order
+     * @return string
+     */
+    public function getReference($order)
+    {
+        return $this->gatewayConfig->getGenerateReferenceForOrder()
+            ? $this->helper->calculateOrderReferenceNumber($order->getIncrementId())
+            : $order->getIncrementId();
+    }
 }
