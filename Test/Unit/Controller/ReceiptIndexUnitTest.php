@@ -8,7 +8,7 @@ use Magento\Checkout\Model\Session;
 use Magento\Framework\App\Action\Context;
 use Magento\Quote\Model\QuoteRepository;
 use Op\Checkout\Gateway\Validator\ResponseValidator;
-use Op\Checkout\Model\CheckoutException;
+use Op\Checkout\Exceptions\CheckoutException;
 use Op\Checkout\Model\ReceiptDataProvider;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\App\Action\Action;

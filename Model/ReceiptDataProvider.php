@@ -338,6 +338,7 @@ class ReceiptDataProvider
 
     /**
      * process invoice
+     * @throws LocalizedException
      */
     protected function processInvoice()
     {
@@ -360,7 +361,7 @@ class ReceiptDataProvider
             }
 
             if (isset($invoiceFailException)) {
-                $this->processError($invoiceFailException);
+                $this->opHelper->processError($invoiceFailException);
             }
         }
     }
@@ -420,18 +421,20 @@ class ReceiptDataProvider
 
     /**
      * @return mixed
+     * @throws LocalizedException
      */
     protected function loadOrder()
     {
         $order = $this->orderInterface->loadByIncrementId($this->orderIncrementalId);
         if (!$order->getId()) {
-            $this->processError('Order not found');
+            $this->opHelper->processError('Order not found');
         }
         return $order;
     }
 
     /**
      * @param string[] $params
+     * @throws LocalizedException
      * @return bool
      */
     protected function verifyPaymentData($params)
@@ -441,7 +444,7 @@ class ReceiptDataProvider
             $this->currentOrder->addCommentToStatusHistory(__('Order canceled. Failed to complete the payment.'));
             $this->orderRepositoryInterface->save($this->currentOrder);
             $this->orderManagementInterface->cancel($this->currentOrder->getId());
-            $this->processError('Failed to complete the payment. Please try again or contact the customer service.');
+            $this->opHelper->processError('Failed to complete the payment. Please try again or contact the customer service.');
         }
         return $verifiedPayment;
     }
@@ -468,19 +471,20 @@ class ReceiptDataProvider
     {
         $details = $transaction->getAdditionalInformation(Transaction::RAW_DETAILS);
         if (is_array($details)) {
-            $this->processSuccess();
+            $this->opHelper->processSuccess();
         }
     }
 
     /**
      * @return bool
+     * @throws LocalizedException
      */
     protected function processTransaction()
     {
         $transaction = $this->loadTransaction();
         if ($transaction) {
             $this->processExistingTransaction($transaction);
-            $this->processError('Payment failed');
+            $this->opHelper->processError('Payment failed');
         }
         return true;
     }
@@ -506,23 +510,6 @@ class ReceiptDataProvider
             ->build(Transaction::TYPE_CAPTURE);
         $transaction->setIsClosed(false);
         return $transaction;
-    }
-
-    /**
-     * @param $errorMessage
-     * @throws CheckoutException
-     */
-    protected function processError($errorMessage)
-    {
-        throw new CheckoutException(__($errorMessage));
-    }
-
-    /**
-     * @throws TransactionSuccessException
-     */
-    protected function processSuccess()
-    {
-        throw new TransactionSuccessException(__('All fine'));
     }
 
     /**
