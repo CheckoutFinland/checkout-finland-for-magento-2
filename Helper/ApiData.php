@@ -558,7 +558,7 @@ class ApiData
     }
 
     /**
-     * @param $order
+     * @param Order $order
      * @return string reference number
      */
     public function getReference($order)
