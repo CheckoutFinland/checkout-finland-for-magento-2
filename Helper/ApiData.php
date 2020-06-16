@@ -102,6 +102,12 @@ class ApiData
     private $gatewayConfig;
 
     /**
+     * Temporary fix for discount handling in Collector payments.
+     * @var $collectorMethods
+     */
+    private $collectorMethods = ['collectorb2c','collectorb2b'];
+
+    /**
      * ApiData constructor.
      * @param LoggerInterface $log
      * @param Signature $signature
@@ -156,6 +162,7 @@ class ApiData
      * @param $merchantId
      * @param $merchantSecret
      * @param $method
+     * @param string $methodId
      * @param null $refundId
      * @param null $refundBody
      * @return array|\Psr\Http\Message\ResponseInterface|null
@@ -166,6 +173,7 @@ class ApiData
         $merchantId,
         $merchantSecret,
         $method,
+        $methodId = null,
         $refundId = null,
         $refundBody = null
     ) {
@@ -178,7 +186,7 @@ class ApiData
         $requestLogEnabled = $this->helper->getRequestLog();
 
         if ($method == 'POST' && !empty($order)) {
-            $body = $this->getResponseBody($order);
+            $body = $this->getResponseBody($order, $methodId);
             if (!$body) {
                 return null;
             }
@@ -284,9 +292,10 @@ class ApiData
 
     /**
      * @param Order $order
+     * @param string $methodId
      * @return false|string
      */
-    protected function getResponseBody($order)
+    protected function getResponseBody($order, $methodId)
     {
         $billingAddress = $order->getBillingAddress();
 
@@ -298,7 +307,7 @@ class ApiData
             'amount' => $order->getGrandTotal() * 100,
             'currency' => $order->getOrderCurrencyCode(),
             'language' => $this->helper->getStoreLocaleForPaymentProvider(),
-            'items' => $this->getOrderItems($order),
+            'items' => $this->getOrderItems($order, $methodId),
             'customer' => [
                 'firstName' => $billingAddress->getFirstName(),
                 'lastName' => $billingAddress->getLastName(),
@@ -385,13 +394,22 @@ class ApiData
 
     /**
      * @param $order
+     * @param string $methodId
      * @return array
      */
-    protected function getOrderItems($order)
+    protected function getOrderItems($order, $methodId)
     {
         $items = [];
 
-        foreach ($this->itemArgs($order) as $i => $item) {
+        foreach ($this->itemArgs($order, $methodId) as $i => $item) {
+
+            if (in_array($methodId, $this->collectorMethods)) {
+                if ($item['type'] === 3) {
+                    continue;
+                }
+            }
+
+            $realPrice = round(($item['price'] * $item['amount']) * 100) / $item['amount'];
             $items[] = [
                 'unitPrice' => round($item['price'] * 100),
                 'units' => $item['amount'],
@@ -407,15 +425,25 @@ class ApiData
 
     /**
      * @param $order
+     * @param string $methodId
      * @return array|null
      */
-    protected function itemArgs($order)
+    protected function itemArgs($order, $methodId)
     {
         $items = [];
 
         # Add line items
         /** @var $item Item */
         foreach ($order->getAllItems() as $key => $item) {
+
+            //Temporary fix for Collector payment methods discount calculation
+            $discountIncl = 0;
+            if (!$this->taxHelper->priceIncludesTax()) {
+                $discountIncl += $item->getDiscountAmount() * (($item->getTaxPercent() / 100) + 1);
+            } else {
+                $discountIncl += $item->getDiscountAmount();
+            }
+
             // When in grouped or bundle product price is dynamic (product_calculations = 0)
             // then also the child products has prices so we set
             if ($item->getChildrenItems() && !$item->getProductOptions()['product_calculations']) {
@@ -433,7 +461,7 @@ class ApiData
                     'title' => $item->getName(),
                     'code' => $item->getSku(),
                     'amount' => floatval($item->getQtyOrdered()),
-                    'price' => floatval($item->getPriceInclTax()),
+                    'price' => in_array($methodId, $this->collectorMethods) ? floatval($item->getPriceInclTax()) - ($discountIncl / $item->getQtyOrdered()) : floatval($item->getPriceInclTax()),
                     'vat' => round(floatval($item->getTaxPercent())),
                     'discount' => 0,
                     'type' => 1,
@@ -476,7 +504,6 @@ class ApiData
                 return null;
             }
         }
-
         // Add discount row
 
         if (abs($order->getDiscountAmount()) > 0) {
