@@ -20,7 +20,7 @@
     "op-merchant-services/op-payment-service-php-sdk": "1.2.*"
   },
   "type": "magento2-module",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "license": "MIT",
   "autoload": {
     "files": [
