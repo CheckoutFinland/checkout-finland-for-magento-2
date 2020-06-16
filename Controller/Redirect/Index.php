@@ -151,7 +151,7 @@ class Index extends \Magento\Framework\App\Action\Action
                 $order = $order->loadByIncrementId(
                     $this->checkoutSession->getLastRealOrderId()
                 );
-                $responseData = $this->getResponseData($order);
+                $responseData = $this->getResponseData($order, $selectedPaymentMethodId);
                 $formData = $this->getFormFields(
                     $responseData,
                     $selectedPaymentMethodId
@@ -251,10 +251,11 @@ class Index extends \Magento\Framework\App\Action\Action
 
     /**
      * @param Order $order
+     * @param string $methodId
      * @return mixed
      * @throws LocalizedException
      */
-    protected function getResponseData($order)
+    protected function getResponseData($order, $methodId)
     {
         $uri = '/payments';
         $merchantId = $this->opHelper->getMerchantId();
@@ -266,7 +267,8 @@ class Index extends \Magento\Framework\App\Action\Action
             $order,
             $merchantId,
             $merchantSecret,
-            $method
+            $method,
+            $methodId
         );
 
         $status = $response['status'];
