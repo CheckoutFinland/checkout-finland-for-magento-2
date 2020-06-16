@@ -2,9 +2,11 @@
 
 namespace Op\Checkout\Helper;
 
-use Magento\Framework\Escaper;
 use Magento\Framework\App\Helper\Context;
+use Magento\Framework\Escaper;
 use Magento\Framework\Locale\Resolver;
+use Magento\Sales\Model\Order;
+use Op\Checkout\Gateway\Config\Config as GatewayConfig;
 
 /**
  * Class Data
@@ -30,6 +32,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     const DEFAULT_ORDER_STATUS = 'payment/opcheckout/order_status';
     const NOTIFICATION_EMAIL = 'payment/opcheckout/recipient_email';
     const LOGO = 'payment/opcheckout/logo';
+    /**
+     * @var GatewayConfig
+     */
+    private $gatewayConfig;
 
     /**
      * Helper class constructor.
@@ -39,20 +45,22 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param \Magento\Framework\Encryption\EncryptorInterface $encryptor
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param Resolver $localeResolver
+     * @param GatewayConfig $gatewayConfig
      */
     public function __construct(
         Context $context,
         Escaper $escaper,
         \Magento\Framework\Encryption\EncryptorInterface $encryptor,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
-        Resolver $localeResolver
-    )
-    {
+        Resolver $localeResolver,
+        GatewayConfig $gatewayConfig
+    ) {
         parent::__construct($context);
         $this->encryptor = $encryptor;
         $this->_storeManager = $storeManager;
         $this->escaper = $escaper;
         $this->localeResolver = $localeResolver;
+        $this->gatewayConfig = $gatewayConfig;
     }
 
     /**
@@ -107,7 +115,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->getConfig(self::MERCHANT_ID_PATH);
     }
 
-
     /**
      * @return mixed
      */
@@ -153,7 +160,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         return $this->methods[$code]->getEnabledPaymentMethodGroups();
     }
-
 
     /**
      * @return array
@@ -206,5 +212,16 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getIdFromOrderReferenceNumber($reference)
     {
         return preg_replace('/\s+/', '', substr($reference, 1, -1));
+    }
+
+    /**
+     * @param Order $order
+     * @return string reference number
+     */
+    public function getReference($order)
+    {
+        return $this->gatewayConfig->getGenerateReferenceForOrder()
+            ? $this->calculateOrderReferenceNumber($order->getIncrementId())
+            : $order->getIncrementId();
     }
 }
