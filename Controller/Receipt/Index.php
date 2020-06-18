@@ -98,7 +98,7 @@ class Index extends \Magento\Framework\App\Action\Action
     {
 
         /** @var array $successStatuses */
-        $successStatuses = ["processing", "pending_opcheckout", "pending"];
+        $successStatuses = ["processing", "pending_opcheckout", "pending", "complete"];
 
         /** @var array $cancelStatuses */
         $cancelStatuses = ["canceled"];
