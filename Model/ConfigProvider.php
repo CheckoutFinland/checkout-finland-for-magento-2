@@ -2,23 +2,18 @@
 
 namespace Op\Checkout\Model;
 
-use GuzzleHttp\Exception\RequestException;
-use Magento\Checkout\Exception;
 use Magento\Checkout\Model\ConfigProviderInterface;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Payment\Helper\Data as PaymentHelper;
-use Magento\Framework\View\Asset\Repository as AssetRepository;
-use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\Locale\Resolver;
-use Op\Checkout\Exceptions\CheckoutException;
+use Magento\Framework\View\Asset\Repository as AssetRepository;
+use Magento\Payment\Helper\Data as PaymentHelper;
+use Magento\Store\Model\StoreManagerInterface;
+use Op\Checkout\Gateway\Config\Config;
 use Op\Checkout\Helper\ApiData as apiData;
 use Op\Checkout\Helper\Data as opHelper;
 use Op\Checkout\Model\Adapter\Adapter;
-use Op\Checkout\Gateway\Config\Config;
-use OpMerchantServices\SDK\Client;
-use OpMerchantServices\SDK\Exception\HmacException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -105,6 +100,7 @@ class ConfigProvider implements ConfigProviderInterface
 
     /**
      * @return array
+     * @throws NoSuchEntityException
      */
     public function getConfig()
     {
@@ -112,17 +108,11 @@ class ConfigProvider implements ConfigProviderInterface
         $config = [];
         $status = $this->gatewayConfig->isActive($storeId);
 
-        try {
-            $opClient = $this->opAdapter->initOpMerchantClient();
-        } catch (LocalizedException $e) {
-            $config['payment'][self::CODE]['success'] = 0;
-            return $config;
-        }
         if (!$status) {
             return $config;
         }
         try {
-            $groupData = $this->getAllPaymentMethods($opClient);
+            $groupData = $this->getAllPaymentMethods();
 
             $config = [
                 'payment' => [
@@ -186,25 +176,31 @@ class ConfigProvider implements ConfigProviderInterface
     /**
      * Get all payment methods and groups with order total value
      *
-     * @param Client $opClient
      * @return mixed|null
      * @throws LocalizedException
      * @throws NoSuchEntityException
      */
-    protected function getAllPaymentMethods($opClient)
+    protected function getAllPaymentMethods()
     {
-        $locale = $this->ophelper->getStoreLocaleForPaymentProvider();
         $orderValue = $this->checkoutSession->getQuote()->getGrandTotal();
 
-        try {
-            $response = $opClient->getGroupedPaymentProviders($orderValue * 100, $locale);
-            return $response;
-        } catch (RequestException $e) {
-            $this->log->error('Connection error to OP Payment Service API: ' . $e->getMessage());
-        } catch (HmacException $e) {
-            $this->log->error('Error occurred in Hmac calculation: ' . $e->getMessage());
+        $response = $this->apidata->processApiRequest(
+            'payment_providers',
+            null,
+            round($orderValue * 100)
+        );
+
+        $errorMsg = $response['error'];
+
+        if (isset($errorMsg)) {
+            $this->log->error(
+                'Error occurred during email refund: '
+                . $errorMsg
+            );
+            $this->ophelper->processError($errorMsg);
         }
-        throw new LocalizedException('Connection error to OP Payment Service API');
+
+        return $response["data"];
     }
 
     /**
@@ -245,7 +241,6 @@ class ConfigProvider implements ConfigProviderInterface
         $i = 1;
 
         foreach ($responseData as $key => $method) {
-
             if ($method->getGroup() == $groupId) {
                 $methods[] = [
                     'checkoutId' => $method->getId(),
