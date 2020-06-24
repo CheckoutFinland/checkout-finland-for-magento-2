@@ -3,8 +3,8 @@ namespace Op\Checkout\Gateway\Validator;
 
 use Magento\Payment\Gateway\Validator\AbstractValidator;
 use Magento\Payment\Gateway\Validator\ResultInterfaceFactory;
-use Op\Checkout\Helper\Signature;
 use Op\Checkout\Helper\Data as opHelper;
+use Op\Checkout\Helper\ApiData;
 
 class ResponseValidator extends AbstractValidator
 {
@@ -13,25 +13,26 @@ class ResponseValidator extends AbstractValidator
      * @var opHelper
      */
     private $opHelper;
+
     /**
-     * @var Signature
+     * @var ApiData
      */
-    private $signature;
+    private $apiData;
 
     /**
      * ResponseValidator constructor.
      * @param opHelper $opHelper
-     * @param Signature $signature
      * @param ResultInterfaceFactory $resultFactory
+     * @param ApiData $apiData
      */
     public function __construct(
         opHelper $opHelper,
-        Signature $signature,
-        ResultInterfaceFactory $resultFactory
+        ResultInterfaceFactory $resultFactory,
+        ApiData $apiData
     ) {
         parent::__construct($resultFactory);
         $this->opHelper = $opHelper;
-        $this->signature = $signature;
+        $this->apiData = $apiData;
     }
 
     /**
@@ -116,10 +117,6 @@ class ResponseValidator extends AbstractValidator
      */
     public function validateResponse($params)
     {
-        $hmac = $this->signature->calculateHmac($params, '', $this->opHelper->getMerchantSecret());
-        if ($params["signature"] !== $hmac) {
-            return false;
-        }
-        return true;
+        return $this->apiData->validateHmac($params, $params["signature"]);
     }
 }

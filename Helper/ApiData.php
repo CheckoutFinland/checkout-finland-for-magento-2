@@ -59,11 +59,6 @@ class ApiData
     private $log;
 
     /**
-     * @var Signature
-     */
-    private $signature;
-
-    /**
      * @var UrlInterface
      */
     private $urlBuilder;
@@ -122,7 +117,6 @@ class ApiData
     /**
      * ApiData constructor.
      * @param LoggerInterface $log
-     * @param Signature $signature
      * @param UrlInterface $urlBuilder
      * @param RequestInterface $request
      * @param Json $json
@@ -142,7 +136,6 @@ class ApiData
      */
     public function __construct(
         LoggerInterface $log,
-        Signature $signature,
         UrlInterface $urlBuilder,
         RequestInterface $request,
         Json $json,
@@ -161,7 +154,6 @@ class ApiData
         EmailRefundRequest $emailRefundRequest
     ) {
         $this->log = $log;
-        $this->signature = $signature;
         $this->urlBuilder = $urlBuilder;
         $this->request = $request;
         $this->json = $json;
@@ -207,7 +199,6 @@ class ApiData
                 . $requestType
                 . ' request to OP Payment Service API. '
                 . $orderLog = isset($order) ? 'Order Id: ' . $order->getId() : ''
-
             );
             // Handle payment requests
             if ($requestType === 'payment') {
@@ -253,6 +244,15 @@ class ApiData
                     'response',
                     'Successful response for email refund. Transaction Id: '
                     . $response["data"]->getTransactionId()
+                );
+            } elseif ($requestType === 'payment_providers') {
+                $response["data"] = $opClient->getGroupedPaymentProviders(
+                    $amount,
+                    $this->helper->getStoreLocaleForPaymentProvider()
+                );
+                $this->logCheckoutData(
+                    'response',
+                    'Successful response for payment providers.'
                 );
             }
         } catch (RequestException $e) {
@@ -665,5 +665,38 @@ class ApiData
         if ($logType === 'response' && $this->helper->getResponseLog() == true) {
             $this->responseLogger->debug($message);
         }
+    }
+
+    /**
+     * @param $params
+     * @param $body
+     * @param $signature
+     * @return bool
+     */
+    public function validateHmac($params, $signature)
+    {
+        try {
+            $this->logCheckoutData(
+                'request',
+                'Validating Hmac for transaction: '
+                . $params["checkout-transaction-id"]
+            );
+            $opClient = $this->opAdapter->initOpMerchantClient();
+
+            $opClient->validateHmac($params, '', $signature);
+        } catch (\Exception $e) {
+            $this->logCheckoutData(
+                'request',
+                'Hmac validation failed for transaction: '
+                . $params["checkout-transaction-id"]
+            );
+            return false;
+        }
+        $this->logCheckoutData(
+            'response',
+            'Hmac validation successful for transaction: '
+            . $params["checkout-transaction-id"]
+        );
+        return true;
     }
 }
