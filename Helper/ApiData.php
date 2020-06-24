@@ -321,6 +321,25 @@ class ApiData
 
         $opPayment->setCallbackUrls($this->createCallbackUrl());
 
+        // Log payment data if debug logger is enabled
+        if ($this->gatewayConfig->getDebugLoggerStatus()) {
+            $dataArr = [
+                'stamp' =>  $opPayment->getStamp(),
+                'reference' =>  $opPayment->getReference(),
+                'amount' => $opPayment->getAmount(),
+                'currency' =>   $opPayment->getCurrency(),
+                'items' =>  $opPayment->getItems(),
+                'language' =>   $opPayment->getLanguage(),
+                'customer' =>   $opPayment->getCustomer(),
+                'invoicing_address' =>  $opPayment->getInvoicingAddress(),
+                'redirect_urls' =>  $opPayment->getRedirectUrls(),
+                'callback_urls' =>  $opPayment->getCallbackUrls()
+            ];
+            $paymentData = json_encode($dataArr, JSON_UNESCAPED_SLASHES);
+
+            $this->log->debug('Payment Data: ' . $paymentData);
+        }
+
         return $opPayment;
     }
 
@@ -659,10 +678,10 @@ class ApiData
      */
     protected function logCheckoutData($logType, $message)
     {
-        if ($logType === 'request' && $this->helper->getRequestLog() == true) {
+        if ($logType === 'request' && $this->gatewayConfig->getRequestLog() == true) {
             $this->requestLogger->debug($message);
         }
-        if ($logType === 'response' && $this->helper->getResponseLog() == true) {
+        if ($logType === 'response' && $this->gatewayConfig->getResponseLog() == true) {
             $this->responseLogger->debug($message);
         }
     }
