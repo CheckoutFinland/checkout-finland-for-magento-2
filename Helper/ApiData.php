@@ -11,21 +11,22 @@ use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\UrlInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Item as OrderItem;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\Tax\Helper\Data as TaxHelper;
-use Op\Checkout\Model\Adapter\Adapter;
+use Op\Checkout\Exceptions\CheckoutException;
 use Op\Checkout\Gateway\Config\Config as GatewayConfig;
 use Op\Checkout\Helper\Data as CheckoutHelper;
 use Op\Checkout\Logger\Request\Logger as RequestLogger;
 use Op\Checkout\Logger\Response\Logger as ResponseLogger;
-use OpMerchantServices\SDK\Exception\HmacException;
-use OpMerchantServices\SDK\Exception\ValidationException;
-use OpMerchantServices\SDK\Request\PaymentRequest;
-use OpMerchantServices\SDK\Model\Customer;
+use Op\Checkout\Model\Adapter\Adapter;
 use OpMerchantServices\SDK\Model\Address;
-use OpMerchantServices\SDK\Model\Item;
 use OpMerchantServices\SDK\Model\CallbackUrl;
+use OpMerchantServices\SDK\Model\Customer;
+use OpMerchantServices\SDK\Model\Item;
+use OpMerchantServices\SDK\Request\EmailRefundRequest;
+use OpMerchantServices\SDK\Request\PaymentRequest;
+use OpMerchantServices\SDK\Request\RefundRequest;
 use Psr\Log\LoggerInterface;
-
 
 /**
  * Class ApiData
@@ -105,7 +106,18 @@ class ApiData
      * @var PaymentRequest
      */
     private $paymentRequest;
-
+    /**
+     * @var RefundRequest
+     */
+    private $refundRequest;
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+    /**
+     * @var EmailRefundRequest
+     */
+    private $emailRefundRequest;
 
     /**
      * ApiData constructor.
@@ -121,9 +133,12 @@ class ApiData
      * @param ResponseLogger $responseLogger
      * @param CheckoutHelper $helper
      * @param Config $resourceConfig
+     * @param StoreManagerInterface $storeManager
      * @param GatewayConfig $gatewayConfig
      * @param Adapter $opAdapter
      * @param PaymentRequest $paymentRequest
+     * @param RefundRequest $refundRequest
+     * @param EmailRefundRequest $emailRefundRequest
      */
     public function __construct(
         LoggerInterface $log,
@@ -138,9 +153,12 @@ class ApiData
         ResponseLogger $responseLogger,
         CheckoutHelper $helper,
         Config $resourceConfig,
+        StoreManagerInterface $storeManager,
         GatewayConfig $gatewayConfig,
         Adapter $opAdapter,
-        PaymentRequest $paymentRequest
+        PaymentRequest $paymentRequest,
+        RefundRequest $refundRequest,
+        EmailRefundRequest $emailRefundRequest
     ) {
         $this->log = $log;
         $this->signature = $signature;
@@ -157,82 +175,112 @@ class ApiData
         $this->gatewayConfig = $gatewayConfig;
         $this->opAdapter = $opAdapter;
         $this->paymentRequest = $paymentRequest;
+        $this->refundRequest = $refundRequest;
+        $this->storeManager = $storeManager;
+        $this->emailRefundRequest = $emailRefundRequest;
     }
 
     /**
-     * Process payment creation
+     * Process Api request
      *
+     * @param string $requestType
      * @param Order $order
-     * @return PaymentRequest|string
+     * @param $amount
+     * @param $payment
+     * @return mixed
      */
-    public function processPayment($order)
-    {
-        // Initialize checkout log variables
-        $responseLogEnabled = $this->helper->getResponseLog();
-        $requestLogEnabled = $this->helper->getRequestLog();
-
-        $response = null;
+    public function processApiRequest(
+        $requestType,
+        $order = null,
+        $amount = null,
+        $payment = null
+    ) {
+        $response["data"] = null;
+        $response["error"] = null;
 
         try {
-            $opPayment = $this->paymentRequest;
-            $this->setPaymentRequestData($opPayment, $order);
-
             $opClient = $this->opAdapter->initOpMerchantClient();
-            if ($requestLogEnabled) {
-                $this->requestLogger
-                    ->debug(
-                        'Creating Request to OP Payment Service API. Order Id: '
-                        . $order->getId()
-                    );
-            }
-            $response["data"] = $opClient->createPayment($opPayment);
-            $response["error"] = null;
 
-            if ($responseLogEnabled) {
-                $this->responseLogger
-                    ->debug(
-                        'Successful response from OP Payment Service API. Order Id: '
-                        . $order->getId()
-                    );
+            $this->logCheckoutData(
+                'request',
+                'Creating '
+                . $requestType
+                . ' request to OP Payment Service API. '
+                . $orderLog = isset($order) ? 'Order Id: ' . $order->getId() : ''
+
+            );
+            // Handle payment requests
+            if ($requestType === 'payment') {
+                $opPayment = $this->paymentRequest;
+                $this->setPaymentRequestData($opPayment, $order);
+
+                $response["data"] = $opClient->createPayment($opPayment);
+
+                $loggedData = json_encode(
+                    [
+                        'transactionId' => $response["data"]->getTransactionId(),
+                        'href' => $response["data"]->getHref()
+                    ],
+                    JSON_UNESCAPED_SLASHES
+                );
+                $this->logCheckoutData(
+                    'response',
+                    'Successful response for order Id '
+                    . $order->getId()
+                    . '. Order data: '
+                    . $loggedData
+                );
+                // Handle refund requests
+            } elseif ($requestType === 'refund') {
+                $opRefund = $this->refundRequest;
+                $this->setRefundRequestData($opRefund, $amount);
+
+                $response["data"] = $opClient->refund($opRefund, $payment->getParentTransactionId());
+
+                $this->logCheckoutData(
+                    'response',
+                    'Successful response for refund. Transaction Id: '
+                    . $response["data"]->getTransactionId()
+                );
+                // Handle email refund requests
+            } elseif ($requestType === 'email_refund') {
+                $opEmailRefund = $this->emailRefundRequest;
+                $this->setEmailRefundRequestData($opEmailRefund, $amount, $order);
+
+                $response["data"] = $opClient->emailRefund($opEmailRefund, $payment->getParentTransactionId());
+
+                $this->logCheckoutData(
+                    'response',
+                    'Successful response for email refund. Transaction Id: '
+                    . $response["data"]->getTransactionId()
+                );
             }
-        } catch (RequestException $e){
+        } catch (RequestException $e) {
             if ($e->hasResponse()) {
-                if ($requestLogEnabled) {
-                    $this->requestLogger->debug('Connection error to OP Payment Service API: '
-                        . $e->getMessage()
-                        . 'Error Code: '
-                        . $e->getCode());
-                }
+                $this->logCheckoutData(
+                    'request',
+                    'Connection error to OP Payment Service API: '
+                    . $e->getMessage()
+                    . 'Error Code: '
+                    . $e->getCode()
+                );
                 $response["error"] = $e->getMessage();
                 return $response;
             }
         } catch (\Exception $e) {
-            if ($requestLogEnabled) {
-                $this->requestLogger->debug('A problem occurred during payment creation: '
-                    . $e->getMessage());
-            }
+            $this->logCheckoutData(
+                'request',
+                'A problem occurred: '
+                . $e->getMessage()
+            );
             $response["error"] = $e->getMessage();
             return $response;
-        }
-
-        if ($responseLogEnabled) {
-            // Gather and log relevant data
-            $loggedData = json_encode(
-                [
-                    'transactionId' => $response["data"]->getTransactionId(),
-                    'href' => $response["data"]->getHref()
-                ],
-                JSON_UNESCAPED_SLASHES
-            );
-            $this->responseLogger->debug('Response data for Order Id ' . $order->getId() . ': ' . $loggedData);
         }
 
         return $response;
     }
 
     /**
-     * Set data for Payment request
-     *
      * @param PaymentRequest $opPayment
      * @param Order $order
      * @return mixed
@@ -277,12 +325,44 @@ class ApiData
     }
 
     /**
+     * @param RefundRequest $opRefund
+     * @param $amount
+     * @throws CheckoutException
+     */
+    protected function setRefundRequestData($opRefund, $amount)
+    {
+        if ($amount <= 0) {
+            $this->helper->processError('Refund amount must be above 0');
+        }
+
+        $opRefund->setAmount(round($amount * 100));
+
+        $callback = $this->createRefundCallback();
+        $opRefund->setCallbackUrls($callback);
+    }
+
+    /**
+     * @param EmailRefundRequest $opEmailRefund
+     * @param $amount
+     * @param $order
+     */
+    protected function setEmailRefundRequestData($opEmailRefund, $amount, $order)
+    {
+        $opEmailRefund->setEmail($order->getBillingAddress()->getEmail());
+
+        $opEmailRefund->setAmount(round($amount * 100));
+
+        $callback = $this->createRefundCallback();
+        $opEmailRefund->setCallbackUrls($callback);
+    }
+
+    /**
      * @param \Magento\Sales\Api\Data\OrderAddressInterface $billingAddress
      * @return Customer
      */
     protected function createCustomer($billingAddress)
     {
-        $customer = new Customer;
+        $customer = new Customer();
 
         $customer->setEmail($billingAddress->getEmail())
             ->setFirstName($billingAddress->getFirstName())
@@ -303,7 +383,8 @@ class ApiData
         $opAddress = new Address();
 
         $country = $this->countryInfo->getCountryInfo(
-            $address->getCountryId())
+            $address->getCountryId()
+        )
             ->getTwoLetterAbbreviation();
         $streetAddressRows = $address->getStreet();
         $streetAddress = $streetAddressRows[0];
@@ -324,8 +405,6 @@ class ApiData
     }
 
     /**
-     * Create order items
-     *
      * @param Order $order
      * @return array
      * @throws \Exception
@@ -338,25 +417,23 @@ class ApiData
         $items = array_map(
             function ($item) use ($order) {
                 return $this->createOrderItems($item);
-            }, $orderItems
+            },
+            $orderItems
         );
 
         $itemSum = 0;
         $itemQty = 0;
 
         /** @var Item $orderItem */
-        foreach ($items as $orderItem)
-        {
+        foreach ($items as $orderItem) {
             $itemSum += floatval($orderItem->getUnitPrice() * $orderItem->getUnits());
             $itemQty += $orderItem->getUnits();
         }
 
-        // Handle rounding issues by creating rounding row for order
         if ($itemSum != $orderTotal) {
             $diffValue = abs($itemSum - $orderTotal);
 
             if ($diffValue > $itemQty) {
-
                 throw new \Exception(__('Difference in rounding the prices is too big'));
             }
 
@@ -394,6 +471,27 @@ class ApiData
     /**
      * @return CallbackUrl
      */
+    protected function createRefundCallback()
+    {
+        $callback = new CallbackUrl();
+
+        try {
+            $storeUrl = $this->storeManager
+                ->getStore()
+                ->getBaseUrl(UrlInterface::URL_TYPE_WEB, true);
+        } catch (NoSuchEntityException $e) {
+            $storeUrl = $this->urlBuilder->getBaseUrl();
+        }
+
+        $callback->setSuccess($storeUrl);
+        $callback->setCancel($storeUrl);
+
+        return $callback;
+    }
+
+    /**
+     * @return CallbackUrl
+     */
     protected function createRedirectUrl()
     {
         $callback = new CallbackUrl();
@@ -418,12 +516,12 @@ class ApiData
     }
 
     /**
-     * @param string $urlParam
+     * @param $param
      * @return string
      */
-    protected function getCallbackUrl($urlParam)
+    protected function getCallbackUrl($param)
     {
-        $successUrl = $this->urlBuilder->getUrl('opcheckout/' . $urlParam, [
+        $successUrl = $this->urlBuilder->getUrl('opcheckout/' . $param, [
             '_secure' => $this->request->isSecure()
         ]);
 
@@ -551,7 +649,21 @@ class ApiData
             $discountExcl += $shippingDiscount / $shippingTaxRate;
         }
 
-        $return = new \Magento\Framework\DataObject;
+        $return = new \Magento\Framework\DataObject();
         return $return->setDiscountInclTax($discountIncl)->setDiscountExclTax($discountExcl);
+    }
+
+    /**
+     * @param string $logType
+     * @param string $message
+     */
+    protected function logCheckoutData($logType, $message)
+    {
+        if ($logType === 'request' && $this->helper->getRequestLog() == true) {
+            $this->requestLogger->debug($message);
+        }
+        if ($logType === 'response' && $this->helper->getResponseLog() == true) {
+            $this->responseLogger->debug($message);
+        }
     }
 }
