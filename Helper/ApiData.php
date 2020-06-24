@@ -2,30 +2,36 @@
 
 namespace Op\Checkout\Helper;
 
+use GuzzleHttp\Exception\RequestException;
 use Magento\Config\Model\ResourceModel\Config;
 use Magento\Directory\Api\CountryInformationAcquirerInterface;
 use Magento\Framework\App\RequestInterface;
-use Magento\Framework\Module\ModuleListInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\UrlInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Item as OrderItem;
 use Magento\Tax\Helper\Data as TaxHelper;
+use Op\Checkout\Model\Adapter\Adapter;
 use Op\Checkout\Gateway\Config\Config as GatewayConfig;
 use Op\Checkout\Helper\Data as CheckoutHelper;
 use Op\Checkout\Logger\Request\Logger as RequestLogger;
 use Op\Checkout\Logger\Response\Logger as ResponseLogger;
+use OpMerchantServices\SDK\Exception\HmacException;
+use OpMerchantServices\SDK\Exception\ValidationException;
+use OpMerchantServices\SDK\Request\PaymentRequest;
+use OpMerchantServices\SDK\Model\Customer;
+use OpMerchantServices\SDK\Model\Address;
+use OpMerchantServices\SDK\Model\Item;
+use OpMerchantServices\SDK\Model\CallbackUrl;
 use Psr\Log\LoggerInterface;
+
 
 /**
  * Class ApiData
  */
 class ApiData
 {
-    /**
-     * @var string API_ENDPOINT
-     */
-    const API_ENDPOINT = 'https://api.checkout.fi';
-
     /**
      * @var Order
      */
@@ -45,11 +51,6 @@ class ApiData
      * @var CheckoutHelper
      */
     private $helper;
-
-    /**
-     * @var string MODULE_CODE
-     */
-    const MODULE_CODE = 'Op_Checkout';
 
     /**
      * @var LoggerInterface
@@ -92,14 +93,19 @@ class ApiData
     private $resourceConfig;
 
     /**
-     * @var ModuleListInterface
-     */
-    private $moduleList;
-
-    /**
      * @var GatewayConfig
      */
     private $gatewayConfig;
+
+    /**
+     * @var Adapter
+     */
+    private $opAdapter;
+    /**
+     * @var PaymentRequest
+     */
+    private $paymentRequest;
+
 
     /**
      * ApiData constructor.
@@ -115,8 +121,9 @@ class ApiData
      * @param ResponseLogger $responseLogger
      * @param CheckoutHelper $helper
      * @param Config $resourceConfig
-     * @param ModuleListInterface $moduleList
      * @param GatewayConfig $gatewayConfig
+     * @param Adapter $opAdapter
+     * @param PaymentRequest $paymentRequest
      */
     public function __construct(
         LoggerInterface $log,
@@ -131,8 +138,9 @@ class ApiData
         ResponseLogger $responseLogger,
         CheckoutHelper $helper,
         Config $resourceConfig,
-        ModuleListInterface $moduleList,
-        GatewayConfig $gatewayConfig
+        GatewayConfig $gatewayConfig,
+        Adapter $opAdapter,
+        PaymentRequest $paymentRequest
     ) {
         $this->log = $log;
         $this->signature = $signature;
@@ -146,263 +154,280 @@ class ApiData
         $this->responseLogger = $responseLogger;
         $this->helper = $helper;
         $this->resourceConfig = $resourceConfig;
-        $this->moduleList = $moduleList;
         $this->gatewayConfig = $gatewayConfig;
+        $this->opAdapter = $opAdapter;
+        $this->paymentRequest = $paymentRequest;
     }
 
     /**
-     * @param $uri
+     * Process payment creation
+     *
      * @param Order $order
-     * @param $merchantId
-     * @param $merchantSecret
-     * @param $method
-     * @param null $refundId
-     * @param null $refundBody
-     * @return array|\Psr\Http\Message\ResponseInterface|null
+     * @return PaymentRequest|string
      */
-    public function getResponse(
-        $uri,
-        $order,
-        $merchantId,
-        $merchantSecret,
-        $method,
-        $refundId = null,
-        $refundBody = null
-    ) {
-        $method = strtoupper($method);
-        $headers = $this->getResponseHeaders($merchantId, $method);
-        $body = '';
-
+    public function processPayment($order)
+    {
         // Initialize checkout log variables
         $responseLogEnabled = $this->helper->getResponseLog();
         $requestLogEnabled = $this->helper->getRequestLog();
 
-        if ($method == 'POST' && !empty($order)) {
-            $body = $this->getResponseBody($order);
-            if (!$body) {
-                return null;
-            }
-            if ($requestLogEnabled) {
-                $this->requestLogger
-                    ->debug(
-                        'Request to OP Payment Service API. Order Id: '
-                        . $order->getId()
-                        . ', Headers: '
-                        . json_encode($headers)
-                    );
-            }
-        }
-
-        if ($refundId) {
-            $headers['checkout-transaction-id'] = $refundId;
-            $body = $refundBody;
-        }
-
-        $headers['signature'] = $this->signature->calculateHmac($headers, $body, $merchantSecret);
-
-        $client = new \GuzzleHttp\Client(['headers' => $headers]);
         $response = null;
 
         try {
-            if ($method == 'POST') {
-                $response = $client->post(self::API_ENDPOINT . $uri, ['body' => $body]);
-                if ($responseLogEnabled) {
-                    $this->responseLogger
-                        ->debug(
-                            'Getting response from OP Payment Service API. Order Id: '
-                            . (!empty($order) ? $order->getId() : '-')
-                            . ', Checkout timestamp: '
-                            . $headers['checkout-timestamp']
-                        );
-                }
-            } else {
-                $response = $client->get(self::API_ENDPOINT . $uri, ['body' => '']);
+            $opPayment = $this->paymentRequest;
+            $this->setPaymentRequestData($opPayment, $order);
+
+            $opClient = $this->opAdapter->initOpMerchantClient();
+            if ($requestLogEnabled) {
+                $this->requestLogger
+                    ->debug(
+                        'Creating Request to OP Payment Service API. Order Id: '
+                        . $order->getId()
+                    );
             }
-        } catch (\GuzzleHttp\Exception\RequestException $e) {
-            // TODO: should we check here for the error code ?
+            $response["data"] = $opClient->createPayment($opPayment);
+            $response["error"] = null;
+
+            if ($responseLogEnabled) {
+                $this->responseLogger
+                    ->debug(
+                        'Successful response from OP Payment Service API. Order Id: '
+                        . $order->getId()
+                    );
+            }
+        } catch (RequestException $e){
             if ($e->hasResponse()) {
-                if ($responseLogEnabled) {
-                    $this->responseLogger->debug('Connection error to OP Payment Service API: ' . $e->getMessage());
+                if ($requestLogEnabled) {
+                    $this->requestLogger->debug('Connection error to OP Payment Service API: '
+                        . $e->getMessage()
+                        . 'Error Code: '
+                        . $e->getCode());
                 }
-                $this->log->critical('Connection error to OP Payment Service API: ' . $e->getMessage());
-                $response["data"] = $e->getMessage();
-                $response["status"] = $e->getCode();
+                $response["error"] = $e->getMessage();
+                return $response;
             }
+        } catch (\Exception $e) {
+            if ($requestLogEnabled) {
+                $this->requestLogger->debug('A problem occurred during payment creation: '
+                    . $e->getMessage());
+            }
+            $response["error"] = $e->getMessage();
             return $response;
         }
 
-        $responseBody = $response->getBody()->getContents();
-
-        $responseHeaders = array_column(array_map(function ($key, $value) {
-            return [$key, $value[0]];
-        }, array_keys($response->getHeaders()), array_values($response->getHeaders())), 1, 0);
-
-        $responseHmac = $this->signature->calculateHmac($responseHeaders, $responseBody, $merchantSecret);
-        $responseSignature = $response->getHeader('signature')[0];
-
-        // No logging when entering checkout page
-        if ($method == 'POST' && $responseLogEnabled && strpos($uri, 'refund') === false) {
+        if ($responseLogEnabled) {
             // Gather and log relevant data
-            $encodedBody = json_decode($responseBody, true);
             $loggedData = json_encode(
                 [
-                    'transactionId' => $encodedBody['transactionId'],
-                    'href' => $encodedBody['href']
+                    'transactionId' => $response["data"]->getTransactionId(),
+                    'href' => $response["data"]->getHref()
                 ],
                 JSON_UNESCAPED_SLASHES
             );
-            $this->responseLogger->debug('Response data for Order Id ' . $order->getId() . ': ' . $loggedData . ', ' . $responseHeaders['Date']);
+            $this->responseLogger->debug('Response data for Order Id ' . $order->getId() . ': ' . $loggedData);
         }
 
-        if ($responseHmac == $responseSignature) {
-            $data = [
-                'status' => $response->getStatusCode(),
-                'data' => json_decode($responseBody)
-            ];
-
-            return $data;
-        }
+        return $response;
     }
 
     /**
-     * @param $account
-     * @param $method
-     * @return array
+     * Set data for Payment request
+     *
+     * @param PaymentRequest $opPayment
+     * @param Order $order
+     * @return mixed
+     * @throws \Exception
      */
-    protected function getResponseHeaders($account, $method)
+    protected function setPaymentRequestData($opPayment, $order)
     {
-        return [
-            'cof-plugin-version' => 'op-payment-service-for-magento-2-' . $this->getExtensionVersion(),
-            'checkout-account' => $account,
-            'checkout-algorithm' => 'sha256',
-            'checkout-method' => strtoupper($method),
-            'checkout-nonce' => uniqid('', true),
-            'checkout-timestamp' => date('Y-m-d\TH:i:s.000\Z', time()),
-            'content-type' => 'application/json; charset=utf-8',
-        ];
+        $billingAddress = $order->getBillingAddress();
+        $shippingAddress = $order->getShippingAddress();
+
+        $opPayment->setStamp(hash('sha256', time() . $order->getIncrementId()));
+
+        $reference = $this->gatewayConfig->getGenerateReferenceForOrder()
+            ? $this->helper->calculateOrderReferenceNumber($order->getIncrementId())
+            : $order->getIncrementId();
+        $opPayment->setReference($reference);
+
+        $opPayment->setCurrency($order->getOrderCurrencyCode())->setAmount(round($order->getGrandTotal() * 100));
+
+        $customer = $this->createCustomer($billingAddress);
+        $opPayment->setCustomer($customer);
+
+        $invoicingAddress = $this->createAddress($order, $billingAddress);
+        $opPayment->setInvoicingAddress($invoicingAddress);
+
+        if (!is_null($shippingAddress)) {
+            $deliveryAddress = $this->createAddress($order, $shippingAddress);
+            $opPayment->setDeliveryAddress($deliveryAddress);
+        }
+
+        $opPayment->setLanguage($this->helper->getStoreLocaleForPaymentProvider());
+
+        $items = $this->getOrderItemLines($order);
+
+        $opPayment->setItems($items);
+
+        $opPayment->setRedirectUrls($this->createRedirectUrl());
+
+        $opPayment->setCallbackUrls($this->createCallbackUrl());
+
+        return $opPayment;
+    }
+
+    /**
+     * @param \Magento\Sales\Api\Data\OrderAddressInterface $billingAddress
+     * @return Customer
+     */
+    protected function createCustomer($billingAddress)
+    {
+        $customer = new Customer;
+
+        $customer->setEmail($billingAddress->getEmail())
+            ->setFirstName($billingAddress->getFirstName())
+            ->setLastName($billingAddress->getLastname())
+            ->setPhone($billingAddress->getTelephone());
+
+        return $customer;
     }
 
     /**
      * @param Order $order
-     * @return false|string
-     */
-    protected function getResponseBody($order)
-    {
-        $billingAddress = $order->getBillingAddress();
-
-        $bodyData = [
-            'stamp' => hash('sha256', time() . $order->getIncrementId()),
-            'reference' => $this->gatewayConfig->getGenerateReferenceForOrder()
-                ? $this->helper->calculateOrderReferenceNumber($order->getIncrementId())
-                : $order->getIncrementId(),
-            'amount' => $order->getGrandTotal() * 100,
-            'currency' => $order->getOrderCurrencyCode(),
-            'language' => $this->helper->getStoreLocaleForPaymentProvider(),
-            'items' => $this->getOrderItems($order),
-            'customer' => [
-                'firstName' => $billingAddress->getFirstName(),
-                'lastName' => $billingAddress->getLastName(),
-                'phone' => $billingAddress->getTelephone(),
-                'email' => $billingAddress->getEmail(),
-            ],
-            'invoicingAddress' => $this->formatAddress($billingAddress),
-            'redirectUrls' => [
-                'success' => $this->getReceiptUrl(),
-                'cancel' => $this->getReceiptUrl(),
-            ],
-            'callbackUrls' => [
-                'success' => $this->getCallbackUrl(),
-                'cancel' => $this->getCallbackUrl(),
-            ],
-        ];
-
-        if ($bodyData['items'] === null) {
-            return false;
-        }
-
-        $shippingAddress = $order->getShippingAddress();
-        if (!is_null($shippingAddress)) {
-            $bodyData['deliveryAddress'] = $this->formatAddress($shippingAddress);
-        }
-
-        // using json_encode for option.
-        $body = json_encode($bodyData, JSON_UNESCAPED_SLASHES);
-
-        if ($this->helper->getDebugLoggerStatus()) {
-            $this->log->debug($body);
-        }
-
-        return $body;
-    }
-
-    /**
      * @param $address
-     * @return array
+     * @throws NoSuchEntityException
+     * @return Address
      */
-    protected function formatAddress($address)
+    protected function createAddress($order, $address)
     {
-        $country = $this->countryInfo->getCountryInfo($address->getCountryId())->getTwoLetterAbbreviation();
+        $opAddress = new Address();
+
+        $country = $this->countryInfo->getCountryInfo(
+            $address->getCountryId())
+            ->getTwoLetterAbbreviation();
         $streetAddressRows = $address->getStreet();
         $streetAddress = $streetAddressRows[0];
         if (mb_strlen($streetAddress, 'utf-8') > 50) {
             $streetAddress = mb_substr($streetAddress, 0, 50, 'utf-8');
         }
 
-        $result = [
-            'streetAddress' => $streetAddress,
-            'postalCode' => $address->getPostcode(),
-            'city' => $address->getCity(),
-            'country' => $country
-        ];
+        $opAddress->setStreetAddress($streetAddress)
+            ->setPostalCode($address->getPostcode())
+            ->setCity($address->getCity())
+            ->setCountry($country);
 
         if (!empty($address->getRegion())) {
-            $result["county"] = $address->getRegion();
+            $opAddress->setCounty($address->getRegion());
         }
 
-        return $result;
+        return $opAddress;
     }
 
     /**
-     * @return mixed
+     * Create order items
+     *
+     * @param Order $order
+     * @return array
+     * @throws \Exception
      */
-    protected function getReceiptUrl()
+    protected function getOrderItemLines($order)
     {
-        $receiptUrl = $this->urlBuilder->getUrl('opcheckout/receipt', [
-            '_secure' => $this->request->isSecure()
-        ]);
+        $orderItems = $this->itemArgs($order);
+        $orderTotal = round($order->getGrandTotal() * 100);
 
-        return $receiptUrl;
+        $items = array_map(
+            function ($item) use ($order) {
+                return $this->createOrderItems($item);
+            }, $orderItems
+        );
+
+        $itemSum = 0;
+        $itemQty = 0;
+
+        /** @var Item $orderItem */
+        foreach ($items as $orderItem)
+        {
+            $itemSum += floatval($orderItem->getUnitPrice() * $orderItem->getUnits());
+            $itemQty += $orderItem->getUnits();
+        }
+
+        // Handle rounding issues by creating rounding row for order
+        if ($itemSum != $orderTotal) {
+            $diffValue = abs($itemSum - $orderTotal);
+
+            if ($diffValue > $itemQty) {
+
+                throw new \Exception(__('Difference in rounding the prices is too big'));
+            }
+
+            $roundingItem = new Item();
+            $roundingItem->setDescription(__('Rounding', 'op-payment-service-magento-2'));
+            $roundingItem->setDeliveryDate(date('Y-m-d'));
+            $roundingItem->setVatPercentage(0);
+            $roundingItem->setUnits(($orderTotal - $itemSum > 0) ? 1 : -1);
+            $roundingItem->setUnitPrice($diffValue);
+            $roundingItem->setProductCode('rounding-row');
+
+            $items[] = $roundingItem;
+        }
+        return $items;
     }
 
-    protected function getCallbackUrl()
+    /**
+     * @param OrderItem $item
+     * @return Item
+     */
+    protected function createOrderItems($item)
     {
-        $successUrl = $this->urlBuilder->getUrl('opcheckout/callback', [
+        $opItem = new Item();
+
+        $opItem->setUnitPrice(round($item['price'] * 100))
+            ->setUnits($item['amount'])
+            ->setVatPercentage($item['vat'])
+            ->setProductCode($item['code'])
+            ->setDeliveryDate(date('Y-m-d'))
+            ->setDescription($item['title']);
+
+        return $opItem;
+    }
+
+    /**
+     * @return CallbackUrl
+     */
+    protected function createRedirectUrl()
+    {
+        $callback = new CallbackUrl();
+
+        $callback->setSuccess($this->getCallbackUrl('receipt'));
+        $callback->setCancel($this->getCallbackUrl('receipt'));
+
+        return $callback;
+    }
+
+    /**
+     * @return CallbackUrl
+     */
+    protected function createCallbackUrl()
+    {
+        $callback = new CallbackUrl();
+
+        $callback->setSuccess($this->getCallbackUrl('callback'));
+        $callback->setCancel($this->getCallbackUrl('callback'));
+
+        return $callback;
+    }
+
+    /**
+     * @param string $urlParam
+     * @return string
+     */
+    protected function getCallbackUrl($urlParam)
+    {
+        $successUrl = $this->urlBuilder->getUrl('opcheckout/' . $urlParam, [
             '_secure' => $this->request->isSecure()
         ]);
 
         return $successUrl;
-    }
-
-    /**
-     * @param $order
-     * @return array
-     */
-    protected function getOrderItems($order)
-    {
-        $items = [];
-
-        foreach ($this->itemArgs($order) as $i => $item) {
-            $items[] = [
-                'unitPrice' => round($item['price'] * 100),
-                'units' => $item['amount'],
-                'vatPercentage' => $item['vat'],
-                'description' => $item['title'],
-                'productCode' => $item['code'],
-                'deliveryDate' => date('Y-m-d'),
-            ];
-        }
-
-        return $items;
     }
 
     /**
@@ -414,7 +439,7 @@ class ApiData
         $items = [];
 
         # Add line items
-        /** @var $item Item */
+        /** @var $item OrderItem */
         foreach ($order->getAllItems() as $key => $item) {
             // When in grouped or bundle product price is dynamic (product_calculations = 0)
             // then also the child products has prices so we set
@@ -424,9 +449,7 @@ class ApiData
                     'code' => $item->getSku(),
                     'amount' => floatval($item->getQtyOrdered()),
                     'price' => 0,
-                    'vat' => 0,
-                    'discount' => 0,
-                    'type' => 1,
+                    'vat' => 0
                 ];
             } else {
                 $items[] = [
@@ -434,9 +457,7 @@ class ApiData
                     'code' => $item->getSku(),
                     'amount' => floatval($item->getQtyOrdered()),
                     'price' => floatval($item->getPriceInclTax()),
-                    'vat' => round(floatval($item->getTaxPercent())),
-                    'discount' => 0,
-                    'type' => 1,
+                    'vat' => round(floatval($item->getTaxPercent()))
                 ];
             }
         }
@@ -458,27 +479,14 @@ class ApiData
 
             $items[] = [
                 'title' => $shippingLabel,
-                'code' => '',
+                'code' => 'shipping-row',
                 'amount' => 1,
                 'price' => floatval($order->getShippingInclTax()),
-                'vat' => round(floatval($shippingTaxPct)),
-                'discount' => 0,
-                'type' => 2,
+                'vat' => round(floatval($shippingTaxPct))
             ];
         }
 
-        foreach ($items as $item) {
-            if ($item['amount'] < 0) {
-                $this->log->error(
-                    'ERROR: Order item with quantity less than 0: '
-                    . $item['productCode']
-                );
-                return null;
-            }
-        }
-
         // Add discount row
-
         if (abs($order->getDiscountAmount()) > 0) {
             $discountData = $this->_getDiscountData($order);
             $discountInclTax = $discountData->getDiscountInclTax();
@@ -496,12 +504,10 @@ class ApiData
 
             $items[] = [
                 'title' => (string)$discountLabel,
-                'code' => '',
+                'code' => 'discount-row',
                 'amount' => -1,
                 'price' => floatval($discountData->getDiscountInclTax()),
-                'vat' => round(floatval($discountTaxPct)),
-                'discount' => 0,
-                'type' => 3
+                'vat' => round(floatval($discountTaxPct))
             ];
         }
 
@@ -547,13 +553,5 @@ class ApiData
 
         $return = new \Magento\Framework\DataObject;
         return $return->setDiscountInclTax($discountIncl)->setDiscountExclTax($discountExcl);
-    }
-
-    /**
-     * @return string module version in format x.x.x
-     */
-    protected function getExtensionVersion()
-    {
-        return $this->moduleList->getOne(self::MODULE_CODE)['setup_version'];
     }
 }
