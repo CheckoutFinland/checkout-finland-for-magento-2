@@ -94,6 +94,11 @@ class RefundDataBuilder implements BuilderInterface
         throw new LocalizedException(__('Error refunding payment. Please try again or refund offline.'));
     }
 
+    /**
+     * @param $amount
+     * @param $payment
+     * @return bool
+     */
     protected function postRefundRequest($amount, $payment)
     {
         $response = $this->apiData->processApiRequest(
