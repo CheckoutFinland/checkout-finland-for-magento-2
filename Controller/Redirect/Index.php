@@ -263,7 +263,7 @@ class Index extends \Magento\Framework\App\Action\Action
      */
     protected function getResponseData($order)
     {
-        $response = $this->apiData->processPayment($order);
+        $response = $this->apiData->processApiRequest('payment', $order);
 
         $errorMsg = $response['error'];
 
