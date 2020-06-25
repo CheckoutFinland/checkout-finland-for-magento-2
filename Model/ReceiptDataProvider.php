@@ -316,7 +316,7 @@ class ReceiptDataProvider
      */
     protected function processOrder($paymentVerified)
     {
-        $orderState = $this->opHelper->getDefaultOrderStatus();
+        $orderState = $this->gatewayConfig->getDefaultOrderStatus();
 
         if ($paymentVerified === 'pending') {
             $this->currentOrder->setState('pending_opcheckout');
@@ -339,6 +339,7 @@ class ReceiptDataProvider
     /**
      * process invoice
      * @throws LocalizedException
+     * @throws CheckoutException
      */
     protected function processInvoice()
     {
@@ -390,7 +391,7 @@ class ReceiptDataProvider
      */
     protected function notifyCanceledOrder()
     {
-        if (filter_var($this->opHelper->getNotificationEmail(), FILTER_VALIDATE_EMAIL)) {
+        if (filter_var($this->gatewayConfig->getNotificationEmail(), FILTER_VALIDATE_EMAIL)) {
             $postObject = new \Magento\Framework\DataObject();
             $postObject->setData(['order_id' => $this->orderIncrementalId]);
             $transport = $this->transportBuilder
@@ -401,7 +402,7 @@ class ReceiptDataProvider
                     'name' => $this->opHelper->getConfig('general/store_information/name') . ' - Magento',
                     'email' => $this->opHelper->getConfig('trans_email/ident_general/email')
                 ])->addTo([
-                    $this->opHelper->getNotificationEmail()
+                    $this->gatewayConfig->getNotificationEmail()
                 ])->getTransport();
             $transport->sendMessage();
         }
@@ -481,7 +482,7 @@ class ReceiptDataProvider
 
     /**
      * @return bool
-     * @throws LocalizedException
+     * @throws CheckoutException
      */
     protected function processTransaction()
     {
