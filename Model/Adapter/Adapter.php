@@ -3,9 +3,9 @@
 namespace Op\Checkout\Model\Adapter;
 
 use Magento\Framework\Exception\LocalizedException;
-use Op\Checkout\Helper\Data;
-use OpMerchantServices\SDK\Client;
 use Magento\Framework\Module\ModuleListInterface;
+use Op\Checkout\Gateway\Config\Config;
+use OpMerchantServices\SDK\Client;
 
 class Adapter
 {
@@ -21,24 +21,31 @@ class Adapter
      * @var string
      */
     protected $merchantSecret;
-    /**
-     * @var Data
-     */
-    private $opHelper;
+
     /**
      * @var ModuleListInterface
      */
     private $moduleList;
 
+    /**
+     * @var Config
+     */
+    private $gatewayConfig;
+
+    /**
+     * Adapter constructor.
+     *
+     * @param Config $gatewayConfig
+     * @param ModuleListInterface $moduleList
+     */
     public function __construct(
-        Data $opHelper,
+        Config $gatewayConfig,
         ModuleListInterface $moduleList
-    )
-    {
-        $this->opHelper = $opHelper;
+    ) {
+        $this->gatewayConfig = $gatewayConfig;
         $this->moduleList = $moduleList;
-        $this->merchantId = $opHelper->getMerchantId();
-        $this->merchantSecret = $opHelper->getMerchantSecret();
+        $this->merchantId = $gatewayConfig->getMerchantId();
+        $this->merchantSecret = $gatewayConfig->getMerchantSecret();
     }
 
     /**
@@ -67,5 +74,4 @@ class Adapter
     {
         return $this->moduleList->getOne(self::MODULE_CODE)['setup_version'];
     }
-
 }

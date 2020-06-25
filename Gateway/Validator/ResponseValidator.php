@@ -5,6 +5,7 @@ use Magento\Payment\Gateway\Validator\AbstractValidator;
 use Magento\Payment\Gateway\Validator\ResultInterfaceFactory;
 use Op\Checkout\Helper\Data as opHelper;
 use Op\Checkout\Helper\ApiData;
+use Op\Checkout\Gateway\Config\Config;
 
 class ResponseValidator extends AbstractValidator
 {
@@ -18,21 +19,28 @@ class ResponseValidator extends AbstractValidator
      * @var ApiData
      */
     private $apiData;
+    /**
+     * @var Config
+     */
+    private $gatewayConfig;
 
     /**
      * ResponseValidator constructor.
      * @param opHelper $opHelper
+     * @param Config $gatewayConfig
      * @param ResultInterfaceFactory $resultFactory
      * @param ApiData $apiData
      */
     public function __construct(
         opHelper $opHelper,
+        Config $gatewayConfig,
         ResultInterfaceFactory $resultFactory,
         ApiData $apiData
     ) {
         parent::__construct($resultFactory);
         $this->opHelper = $opHelper;
         $this->apiData = $apiData;
+        $this->gatewayConfig = $gatewayConfig;
     }
 
     /**
@@ -44,7 +52,7 @@ class ResponseValidator extends AbstractValidator
         $isValid = true;
         $fails = [];
 
-        if ($this->isRequestMerchantIdEmpty($this->opHelper->getMerchantId())) {
+        if ($this->isRequestMerchantIdEmpty($this->gatewayConfig->getMerchantId())) {
             $fails[] = "Request MerchantId is empty";
         }
 
@@ -76,7 +84,7 @@ class ResponseValidator extends AbstractValidator
      */
     public function isMerchantIdValid($responseMerchantId)
     {
-        $requestMerchantId = $this->opHelper->getMerchantId();
+        $requestMerchantId = $this->gatewayConfig->getMerchantId();
         if ($requestMerchantId == $responseMerchantId) {
             return true;
         }

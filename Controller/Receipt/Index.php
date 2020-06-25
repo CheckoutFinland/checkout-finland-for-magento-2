@@ -6,13 +6,11 @@ use Magento\Checkout\Model\Session;
 use Magento\Framework\App\Action\Context;
 use Magento\Quote\Model\QuoteRepository;
 use Magento\Sales\Api\Data\OrderInterface;
-use Op\Checkout\Gateway\Validator\ResponseValidator;
-use Op\Checkout\Helper\ProcessPayment;
-use Op\Checkout\Exceptions\CheckoutException;
-use Op\Checkout\Exceptions\TransactionSuccessException;
-use Op\Checkout\Model\ReceiptDataProvider;
 use Op\Checkout\Gateway\Config\Config;
+use Op\Checkout\Gateway\Validator\ResponseValidator;
 use Op\Checkout\Helper\Data;
+use Op\Checkout\Helper\ProcessPayment;
+use Op\Checkout\Model\ReceiptDataProvider;
 
 /**
  * Class Index
@@ -124,7 +122,7 @@ class Index extends \Magento\Framework\App\Action\Action
 
         if ($status == 'pending_payment' || in_array($status, $cancelStatuses)) {
             // order status could be changed by callback, if not, status change needs to be forced by processing the payment
-            $failMessages = $this->processPayment->process($this->getRequest()->getParams(),$this->session);
+            $failMessages = $this->processPayment->process($this->getRequest()->getParams(), $this->session);
         }
 
         if ($status == 'pending_payment') { // status could be changed by callback, if not, it needs to be forced
@@ -132,9 +130,9 @@ class Index extends \Magento\Framework\App\Action\Action
             $status = $order->getStatus(); // getting current status
         }
 
-        if (in_array($status,$successStatuses)) {
+        if (in_array($status, $successStatuses)) {
             $this->_redirect('checkout/onepage/success');
-        } else if (in_array($status,$cancelStatuses)) {
+        } elseif (in_array($status, $cancelStatuses)) {
 
             /** @var string $failMessage */
             foreach ($failMessages as $failMessage) {
