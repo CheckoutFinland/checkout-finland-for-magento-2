@@ -1,12 +1,10 @@
 <?php
-/**
- * Copyright © Magento, Inc. All rights reserved.
- * See COPYING.txt for license details.
- */
+
 namespace Op\Checkout\Gateway\Config;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Payment\Gateway\ConfigInterface;
+use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Store\Model\ScopeInterface;
 
 class Config extends \Magento\Payment\Gateway\Config\Config
@@ -14,6 +12,8 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     const DEFAULT_PATH_PATTERN = 'payment/%s/%s';
     const KEY_TITLE = 'title';
     const CODE = 'opcheckout';
+    const KEY_MERCHANT_SECRET = 'merchant_secret';
+    const KEY_MERCHANT_ID = 'merchant_id';
     const KEY_ACTIVE = 'active';
     const KEY_SKIP_BANK_SELECTION = 'skip_bank_selection';
     const BYPASS_PATH = 'Op_Checkout/payment/checkout-bypass';
@@ -28,13 +28,55 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     const KEY_PAYMENTMETHOD_HIGHLIGHT_COLOR = 'op_personalization/payment_method_highlight';
     const KEY_PAYMENTMETHOD_HIGHLIGHT_HOVER = 'op_personalization/payment_method_hover';
     const KEY_PAYMENTMETHOD_ADDITIONAL = 'op_personalization/advanced_op_personalization/additional_css';
+    const KEY_RESPONSE_LOG = 'response_log';
+    const KEY_REQUEST_LOG = 'request_log';
+    const KEY_DEFAULT_ORDER_STATUS = 'order_status';
+    const KEY_NOTIFICATION_EMAIL = 'recipient_email';
 
+    /**
+     * @var EncryptorInterface
+     */
+    private $encryptor;
+
+    /**
+     * Config constructor.
+     *
+     * @param ScopeConfigInterface $scopeConfig
+     * @param EncryptorInterface $encryptor
+     * @param string $methodCode
+     * @param string $pathPattern
+     */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
+        EncryptorInterface $encryptor,
         $methodCode = self::CODE,
         $pathPattern = self::DEFAULT_PATH_PATTERN
     ) {
+        $this->encryptor = $encryptor;
         parent::__construct($scopeConfig, $methodCode, $pathPattern);
+    }
+
+    /**
+     * Gets Merchant Id.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function getMerchantId($storeId = null)
+    {
+        return $this->getValue(self::KEY_MERCHANT_ID, $storeId);
+    }
+
+    /**
+     * Gets Merchant secret.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function getMerchantSecret($storeId = null)
+    {
+        $merchantSecret = $this->getValue(self::KEY_MERCHANT_SECRET, $storeId);
+        return $this->encryptor->decrypt($merchantSecret);
     }
 
     /**
@@ -180,4 +222,37 @@ class Config extends \Magento\Payment\Gateway\Config\Config
         }
         return self::BYPASS_PATH;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getResponseLog($storeId = null)
+    {
+        return $this->getValue(self::KEY_RESPONSE_LOG, $storeId);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getRequestLog($storeId = null)
+    {
+        return $this->getValue(self::KEY_REQUEST_LOG, $storeId);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDefaultOrderStatus($storeId = null)
+    {
+        return $this->getValue(self::KEY_DEFAULT_ORDER_STATUS, $storeId);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getNotificationEmail($storeId = null)
+    {
+        return $this->getValue(self::KEY_NOTIFICATION_EMAIL, $storeId);
+    }
+
 }

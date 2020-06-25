@@ -12,12 +12,11 @@ use Magento\Framework\UrlInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Item as OrderItem;
 use Magento\Store\Model\StoreManagerInterface;
-use Magento\Tax\Helper\Data as TaxHelper;
 use Op\Checkout\Exceptions\CheckoutException;
 use Op\Checkout\Gateway\Config\Config as GatewayConfig;
 use Op\Checkout\Helper\Data as CheckoutHelper;
-use Op\Checkout\Logger\Request\Logger as RequestLogger;
-use Op\Checkout\Logger\Response\Logger as ResponseLogger;
+use Op\Checkout\Logger\Request\RequestLogger as RequestLogger;
+use Op\Checkout\Logger\Response\ResponseLogger as ResponseLogger;
 use Op\Checkout\Model\Adapter\Adapter;
 use OpMerchantServices\SDK\Model\Address;
 use OpMerchantServices\SDK\Model\CallbackUrl;
@@ -59,11 +58,6 @@ class ApiData
     private $log;
 
     /**
-     * @var Signature
-     */
-    private $signature;
-
-    /**
      * @var UrlInterface
      */
     private $urlBuilder;
@@ -82,11 +76,6 @@ class ApiData
      * @var CountryInformationAcquirerInterface
      */
     private $countryInfo;
-
-    /**
-     * @var TaxHelper
-     */
-    private $taxHelper;
 
     /**
      * @var Config
@@ -122,12 +111,10 @@ class ApiData
     /**
      * ApiData constructor.
      * @param LoggerInterface $log
-     * @param Signature $signature
      * @param UrlInterface $urlBuilder
      * @param RequestInterface $request
      * @param Json $json
      * @param CountryInformationAcquirerInterface $countryInformationAcquirer
-     * @param TaxHelper $taxHelper
      * @param Order $order
      * @param RequestLogger $requestLogger
      * @param ResponseLogger $responseLogger
@@ -142,12 +129,10 @@ class ApiData
      */
     public function __construct(
         LoggerInterface $log,
-        Signature $signature,
         UrlInterface $urlBuilder,
         RequestInterface $request,
         Json $json,
         CountryInformationAcquirerInterface $countryInformationAcquirer,
-        TaxHelper $taxHelper,
         Order $order,
         RequestLogger $requestLogger,
         ResponseLogger $responseLogger,
@@ -161,12 +146,10 @@ class ApiData
         EmailRefundRequest $emailRefundRequest
     ) {
         $this->log = $log;
-        $this->signature = $signature;
         $this->urlBuilder = $urlBuilder;
         $this->request = $request;
         $this->json = $json;
         $this->countryInfo = $countryInformationAcquirer;
-        $this->taxHelper = $taxHelper;
         $this->order = $order;
         $this->requestLogger = $requestLogger;
         $this->responseLogger = $responseLogger;
@@ -201,13 +184,13 @@ class ApiData
         try {
             $opClient = $this->opAdapter->initOpMerchantClient();
 
-            $this->logCheckoutData(
+            $this->helper->logCheckoutData(
                 'request',
+                'info',
                 'Creating '
                 . $requestType
                 . ' request to OP Payment Service API. '
                 . $orderLog = isset($order) ? 'Order Id: ' . $order->getId() : ''
-
             );
             // Handle payment requests
             if ($requestType === 'payment') {
@@ -223,8 +206,9 @@ class ApiData
                     ],
                     JSON_UNESCAPED_SLASHES
                 );
-                $this->logCheckoutData(
+                $this->helper->logCheckoutData(
                     'response',
+                    'success',
                     'Successful response for order Id '
                     . $order->getId()
                     . '. Order data: '
@@ -237,8 +221,9 @@ class ApiData
 
                 $response["data"] = $opClient->refund($opRefund, $payment->getParentTransactionId());
 
-                $this->logCheckoutData(
+                $this->helper->logCheckoutData(
                     'response',
+                    'success',
                     'Successful response for refund. Transaction Id: '
                     . $response["data"]->getTransactionId()
                 );
@@ -249,16 +234,28 @@ class ApiData
 
                 $response["data"] = $opClient->emailRefund($opEmailRefund, $payment->getParentTransactionId());
 
-                $this->logCheckoutData(
+                $this->helper->logCheckoutData(
                     'response',
+                    'success',
                     'Successful response for email refund. Transaction Id: '
                     . $response["data"]->getTransactionId()
+                );
+            } elseif ($requestType === 'payment_providers') {
+                $response["data"] = $opClient->getGroupedPaymentProviders(
+                    $amount,
+                    $this->helper->getStoreLocaleForPaymentProvider()
+                );
+                $this->helper->logCheckoutData(
+                    'response',
+                    'success',
+                    'Successful response for payment providers.'
                 );
             }
         } catch (RequestException $e) {
             if ($e->hasResponse()) {
-                $this->logCheckoutData(
+                $this->helper->logCheckoutData(
                     'request',
+                    'error',
                     'Connection error to OP Payment Service API: '
                     . $e->getMessage()
                     . 'Error Code: '
@@ -268,8 +265,9 @@ class ApiData
                 return $response;
             }
         } catch (\Exception $e) {
-            $this->logCheckoutData(
-                'request',
+            $this->helper->logCheckoutData(
+                'response',
+                'error',
                 'A problem occurred: '
                 . $e->getMessage()
             );
@@ -320,6 +318,9 @@ class ApiData
         $opPayment->setRedirectUrls($this->createRedirectUrl());
 
         $opPayment->setCallbackUrls($this->createCallbackUrl());
+
+        // Log payment data
+        $this->helper->logCheckoutData('request', 'info', $opPayment);
 
         return $opPayment;
     }
@@ -529,7 +530,7 @@ class ApiData
     }
 
     /**
-     * @param $order
+     * @param Order $order
      * @return array|null
      */
     protected function itemArgs($order)
@@ -586,7 +587,7 @@ class ApiData
 
         // Add discount row
         if (abs($order->getDiscountAmount()) > 0) {
-            $discountData = $this->_getDiscountData($order);
+            $discountData = $this->helper->getDiscountData($order);
             $discountInclTax = $discountData->getDiscountInclTax();
             $discountExclTax = $discountData->getDiscountExclTax();
             $discountTaxPct = 0;
@@ -613,57 +614,37 @@ class ApiData
     }
 
     /**
-     * @param \Magento\Sales\Model\Order $order
-     * @return mixed
+     * @param $params
+     * @param $signature
+     * @return bool
      */
-    private function _getDiscountData(\Magento\Sales\Model\Order $order)
+    public function validateHmac($params, $signature)
     {
-        $discountIncl = 0;
-        $discountExcl = 0;
+        try {
+            $this->helper->logCheckoutData(
+                'request',
+                'info',
+                'Validating Hmac for transaction: '
+                . $params["checkout-transaction-id"]
+            );
+            $opClient = $this->opAdapter->initOpMerchantClient();
 
-        // Get product discount amounts
-        foreach ($order->getAllItems() as $item) {
-            if (!$this->taxHelper->priceIncludesTax()) {
-                $discountExcl += $item->getDiscountAmount();
-                $discountIncl += $item->getDiscountAmount() * (($item->getTaxPercent() / 100) + 1);
-            } else {
-                $discountExcl += $item->getDiscountAmount() / (($item->getTaxPercent() / 100) + 1);
-                $discountIncl += $item->getDiscountAmount();
-            }
+            $opClient->validateHmac($params, '', $signature);
+        } catch (\Exception $e) {
+            $this->helper->logCheckoutData(
+                'request',
+                'error',
+                'Hmac validation failed for transaction: '
+                . $params["checkout-transaction-id"]
+            );
+            return false;
         }
-
-        // Get shipping tax rate
-        if ((float)$order->getShippingInclTax() && (float)$order->getShippingAmount()) {
-            $shippingTaxRate = $order->getShippingInclTax() / $order->getShippingAmount();
-        } else {
-            $shippingTaxRate = 1;
-        }
-
-        // Add / exclude shipping tax
-        $shippingDiscount = (float)$order->getShippingDiscountAmount();
-        if (!$this->taxHelper->priceIncludesTax()) {
-            $discountIncl += $shippingDiscount * $shippingTaxRate;
-            $discountExcl += $shippingDiscount;
-        } else {
-            $discountIncl += $shippingDiscount;
-            $discountExcl += $shippingDiscount / $shippingTaxRate;
-        }
-
-        $return = new \Magento\Framework\DataObject();
-        return $return->setDiscountInclTax($discountIncl)->setDiscountExclTax($discountExcl);
-    }
-
-    /**
-     * @param string $logType
-     * @param string $message
-     */
-    protected function logCheckoutData($logType, $message)
-    {
-        if ($logType === 'request' && $this->helper->getRequestLog() == true) {
-            $this->requestLogger->debug($message);
-        }
-        if ($logType === 'response' && $this->helper->getResponseLog() == true) {
-            $this->responseLogger->debug($message);
-        }
+        $this->helper->logCheckoutData(
+            'response',
+            'info',
+            'Hmac validation successful for transaction: '
+            . $params["checkout-transaction-id"]
+        );
+        return true;
     }
 }

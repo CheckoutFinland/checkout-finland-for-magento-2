@@ -18,10 +18,11 @@ use Magento\Sales\Model\Order\Payment\Transaction;
 use Magento\Sales\Model\Order\Payment\Transaction\Builder as transactionBuilder;
 use Magento\Sales\Model\Order\Payment\Transaction\BuilderInterface as transactionBuilderInterface;
 use Magento\Sales\Model\Service\InvoiceService;
+use Op\Checkout\Exceptions\CheckoutException;
 use Op\Checkout\Gateway\Config\Config;
 use Op\Checkout\Gateway\Validator\ResponseValidator;
+use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data as opHelper;
-use Op\Checkout\Helper\Signature;
 
 /**
  * Class ReceiptDataProvider
@@ -84,11 +85,6 @@ class ReceiptDataProvider
      * @var transactionBuilderInterface
      */
     protected $transactionBuilderInterface;
-
-    /**
-     * @var Signature
-     */
-    protected $signature;
 
     /**
      * @var InvoiceService
@@ -163,6 +159,10 @@ class ReceiptDataProvider
      * @var Config
      */
     private $gatewayConfig;
+    /**
+     * @var ApiData
+     */
+    private $apiData;
 
     /**
      * ReceiptDataProvider constructor.
@@ -177,7 +177,6 @@ class ReceiptDataProvider
      * @param OrderRepositoryInterface $orderRepositoryInterface
      * @param transactionBuilderInterface $transactionBuilderInterface
      * @param CacheInterface $cache
-     * @param Signature $signature
      * @param InvoiceService $invoiceService
      * @param OrderStatusHistoryRepositoryInterface $orderStatusHistoryRepository
      * @param TransactionFactory $transactionFactory
@@ -185,6 +184,7 @@ class ReceiptDataProvider
      * @param OrderInterface $orderInterface
      * @param transactionBuilder $transactionBuilder
      * @param Config $gatewayConfig
+     * @param ApiData $apiData
      */
     public function __construct(
         Context $context,
@@ -198,14 +198,14 @@ class ReceiptDataProvider
         OrderRepositoryInterface $orderRepositoryInterface,
         transactionBuilderInterface $transactionBuilderInterface,
         CacheInterface $cache,
-        Signature $signature,
         InvoiceService $invoiceService,
         OrderStatusHistoryRepositoryInterface $orderStatusHistoryRepository,
         TransactionFactory $transactionFactory,
         opHelper $opHelper,
         OrderInterface $orderInterface,
         transactionBuilder $transactionBuilder,
-        Config $gatewayConfig
+        Config $gatewayConfig,
+        ApiData $apiData
     ) {
         $this->urlBuilder = $context->getUrl();
         $this->cache = $cache;
@@ -219,7 +219,6 @@ class ReceiptDataProvider
         $this->responseValidator = $responseValidator;
         $this->orderRepositoryInterface = $orderRepositoryInterface;
         $this->transactionBuilderInterface = $transactionBuilderInterface;
-        $this->signature = $signature;
         $this->invoiceService = $invoiceService;
         $this->orderStatusHistoryRepository = $orderStatusHistoryRepository;
         $this->transactionFactory = $transactionFactory;
@@ -227,12 +226,13 @@ class ReceiptDataProvider
         $this->orderInterface = $orderInterface;
         $this->transactionBuilder = $transactionBuilder;
         $this->gatewayConfig = $gatewayConfig;
+        $this->apiData = $apiData;
     }
-
-    /* MOST OF THE LOGIC GOES HERE! */
 
     /**
      * @param array $params
+     * @throws CheckoutException
+     * @throws LocalizedException
      */
     public function execute(array $params)
     {
@@ -316,7 +316,7 @@ class ReceiptDataProvider
      */
     protected function processOrder($paymentVerified)
     {
-        $orderState = $this->opHelper->getDefaultOrderStatus();
+        $orderState = $this->gatewayConfig->getDefaultOrderStatus();
 
         if ($paymentVerified === 'pending') {
             $this->currentOrder->setState('pending_opcheckout');
@@ -339,6 +339,7 @@ class ReceiptDataProvider
     /**
      * process invoice
      * @throws LocalizedException
+     * @throws CheckoutException
      */
     protected function processInvoice()
     {
@@ -390,7 +391,7 @@ class ReceiptDataProvider
      */
     protected function notifyCanceledOrder()
     {
-        if (filter_var($this->opHelper->getNotificationEmail(), FILTER_VALIDATE_EMAIL)) {
+        if (filter_var($this->gatewayConfig->getNotificationEmail(), FILTER_VALIDATE_EMAIL)) {
             $postObject = new \Magento\Framework\DataObject();
             $postObject->setData(['order_id' => $this->orderIncrementalId]);
             $transport = $this->transportBuilder
@@ -401,7 +402,7 @@ class ReceiptDataProvider
                     'name' => $this->opHelper->getConfig('general/store_information/name') . ' - Magento',
                     'email' => $this->opHelper->getConfig('trans_email/ident_general/email')
                 ])->addTo([
-                    $this->opHelper->getNotificationEmail()
+                    $this->gatewayConfig->getNotificationEmail()
                 ])->getTransport();
             $transport->sendMessage();
         }
@@ -421,7 +422,7 @@ class ReceiptDataProvider
 
     /**
      * @return mixed
-     * @throws LocalizedException
+     * @throws CheckoutException
      */
     protected function loadOrder()
     {
@@ -435,18 +436,22 @@ class ReceiptDataProvider
     /**
      * @param string[] $params
      * @throws LocalizedException
-     * @return bool
+     * @throws CheckoutException
+     * @return string|void
      */
     protected function verifyPaymentData($params)
     {
-        $verifiedPayment = $this->verifyPayment($params['signature'], $params['checkout-status'], $params);
-        if (!$verifiedPayment) {
+        $status = $params['checkout-status'];
+        $verifiedPayment = $this->apiData->validateHmac($params, $params['signature']);
+
+        if ($verifiedPayment && ($status === 'ok' || $status == 'pending')) {
+            return $status;
+        } else {
             $this->currentOrder->addCommentToStatusHistory(__('Order canceled. Failed to complete the payment.'));
             $this->orderRepositoryInterface->save($this->currentOrder);
             $this->orderManagementInterface->cancel($this->currentOrder->getId());
             $this->opHelper->processError('Failed to complete the payment. Please try again or contact the customer service.');
         }
-        return $verifiedPayment;
     }
 
     /**
@@ -477,7 +482,7 @@ class ReceiptDataProvider
 
     /**
      * @return bool
-     * @throws LocalizedException
+     * @throws CheckoutException
      */
     protected function processTransaction()
     {
@@ -510,22 +515,5 @@ class ReceiptDataProvider
             ->build(Transaction::TYPE_CAPTURE);
         $transaction->setIsClosed(false);
         return $transaction;
-    }
-
-    /**
-     * @param $signature
-     * @param $status
-     * @param $params
-     * @return bool
-     */
-    protected function verifyPayment($signature, $status, $params)
-    {
-        $hmac = $this->signature->calculateHmac($params, '', $this->opHelper->getMerchantSecret());
-
-        if ($signature === $hmac && ($status === 'ok' || $status === 'pending')) {
-            return $status;
-        } else {
-            return false;
-        }
     }
 }
