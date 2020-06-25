@@ -1,8 +1,5 @@
 <?php
-/**
- * Copyright © Magento, Inc. All rights reserved.
- * See COPYING.txt for license details.
- */
+
 namespace Op\Checkout\Gateway\Config;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -33,7 +30,8 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     const KEY_PAYMENTMETHOD_ADDITIONAL = 'op_personalization/advanced_op_personalization/additional_css';
     const KEY_RESPONSE_LOG = 'response_log';
     const KEY_REQUEST_LOG = 'request_log';
-    const KEY_DEBUG_LOG = 'debuglog';
+    const KEY_DEFAULT_ORDER_STATUS = 'order_status';
+    const KEY_NOTIFICATION_EMAIL = 'recipient_email';
 
     /**
      * @var EncryptorInterface
@@ -244,8 +242,17 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     /**
      * @return mixed
      */
-    public function getDebugLoggerStatus($storeId = null)
+    public function getDefaultOrderStatus($storeId = null)
     {
-        return $this->getValue(self::KEY_DEBUG_LOG, $storeId);
+        return $this->getValue(self::KEY_DEFAULT_ORDER_STATUS, $storeId);
     }
+
+    /**
+     * @return mixed
+     */
+    public function getNotificationEmail($storeId = null)
+    {
+        return $this->getValue(self::KEY_NOTIFICATION_EMAIL, $storeId);
+    }
+
 }
