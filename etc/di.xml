@@ -60,7 +60,7 @@
       <argument name="transferFactory" xsi:type="object">Op\Checkout\Gateway\Http\TransferFactory</argument>
       <argument name="client" xsi:type="object">Op\Checkout\Gateway\Http\Client\TransactionRefund</argument>
       <argument name="validator" xsi:type="object">Op\Checkout\Gateway\Validator\RefundResponseValidator</argument>
-      <argument name="handler" xsi:type="object">Op\Checkout\Gateway\Request\RefundHandler</argument>
+      <argument name="handler" xsi:type="object">Op\Checkout\Gateway\Response\RefundHandler</argument>
     </arguments>
   </virtualType>
 

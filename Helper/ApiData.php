@@ -167,16 +167,16 @@ class ApiData
      * Process Api request
      *
      * @param string $requestType
-     * @param Order $order
+     * @param Order|null $order
      * @param $amount
-     * @param $payment
+     * @param $transactionId
      * @return mixed
      */
     public function processApiRequest(
         $requestType,
         $order = null,
         $amount = null,
-        $payment = null
+        $transactionId = null
     ) {
         $response["data"] = null;
         $response["error"] = null;
@@ -219,7 +219,7 @@ class ApiData
                 $opRefund = $this->refundRequest;
                 $this->setRefundRequestData($opRefund, $amount);
 
-                $response["data"] = $opClient->refund($opRefund, $payment->getParentTransactionId());
+                $response["data"] = $opClient->refund($opRefund, $transactionId);
 
                 $this->helper->logCheckoutData(
                     'response',
@@ -232,7 +232,7 @@ class ApiData
                 $opEmailRefund = $this->emailRefundRequest;
                 $this->setEmailRefundRequestData($opEmailRefund, $amount, $order);
 
-                $response["data"] = $opClient->emailRefund($opEmailRefund, $payment->getParentTransactionId());
+                $response["data"] = $opClient->emailRefund($opEmailRefund, $transactionId);
 
                 $this->helper->logCheckoutData(
                     'response',

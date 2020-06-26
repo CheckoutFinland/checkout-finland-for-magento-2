@@ -2,25 +2,38 @@
 
 namespace Op\Checkout\Gateway\Validator;
 
+use Magento\Payment\Gateway\Helper\SubjectReader;
 use Magento\Payment\Gateway\Validator\AbstractValidator;
+use Magento\Payment\Gateway\Validator\ResultInterfaceFactory;
 
 class RefundResponseValidator extends AbstractValidator
 {
-    protected $resultFactory;
+    /**
+     * @var SubjectReader
+     */
+    private $subjectReader;
+
     public function __construct(
-        \Magento\Payment\Gateway\Validator\ResultInterfaceFactory $resultFactory
+        ResultInterfaceFactory $resultFactory,
+        SubjectReader $subjectReader
     ) {
+        $this->subjectReader = $subjectReader;
         parent::__construct($resultFactory);
-        $this->resultFactory = $resultFactory;
     }
 
     public function validate(array $validationSubject)
     {
-        //$responses = \Magento\Payment\Gateway\Helper\SubjectReader::readResponse($validationSubject);
-
-        $isValid = true;
+        $response = SubjectReader::readResponse($validationSubject);
         $errorMessages = [];
 
-        return $this->createResult($isValid, $errorMessages);
+        if (isset($response['status']) && $response['status'] === 'ok') {
+            return $this->createResult(
+                true,
+                ['status' => $response['status']]
+            );
+        }
+        $errorMessages[] = 'Response status is not ok.';
+
+        return $this->createResult(false, $errorMessages);
     }
 }
