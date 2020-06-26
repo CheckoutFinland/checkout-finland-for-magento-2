@@ -31,6 +31,10 @@ class RefundHandler implements HandlerInterface
         $this->subjectReader = $subjectReader;
     }
 
+    /**
+     * @param array $handlingSubject
+     * @param array $response
+     */
     public function handle(array $handlingSubject, array $response)
     {
         $payment = $this->subjectReader->readPayment($handlingSubject);
