@@ -23,7 +23,7 @@ class RefundResponseValidator extends AbstractValidator
 
     public function validate(array $validationSubject)
     {
-        $response = SubjectReader::readResponse($validationSubject);
+        $response = $this->subjectReader->readResponse($validationSubject);
         $errorMessages = [];
 
         if (isset($response['status']) && $response['status'] === 'ok') {
