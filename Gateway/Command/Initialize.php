@@ -2,23 +2,54 @@
 
 namespace Op\Checkout\Gateway\Command;
 
+use Magento\Payment\Gateway\Command\ResultInterface;
 use Magento\Payment\Gateway\CommandInterface;
+use Magento\Payment\Gateway\Data\PaymentDataObjectInterface;
+use Magento\Payment\Gateway\Helper\SubjectReader;
+use Magento\Payment\Model\InfoInterface;
+use Magento\Sales\Model\Order;
+use Op\Checkout\Helper\Data;
 
+/**
+ * Class Initialize
+ */
 class Initialize implements CommandInterface
 {
+    /**
+     * @var Data $opHelper
+     */
     protected $opHelper;
-    public function __construct(\Op\Checkout\Helper\Data $opHelper)
-    {
+
+    /**
+     * @var SubjectReader
+     */
+    private $subjectReader;
+
+    /**
+     * Initialize constructor.
+     *
+     * @param Data $opHelper
+     * @param SubjectReader $subjectReader
+     */
+    public function __construct(
+        Data $opHelper,
+        SubjectReader $subjectReader
+    ) {
         $this->opHelper = $opHelper;
+        $this->subjectReader = $subjectReader;
     }
 
+    /**
+     * @param array $commandSubject
+     * @return $this|ResultInterface|null
+     */
     public function execute(array $commandSubject)
     {
-        /** @var \Magento\Payment\Gateway\Data\PaymentDataObjectInterface $payment */
-        $payment = \Magento\Payment\Gateway\Helper\SubjectReader::readPayment($commandSubject);
-        $stateObject = \Magento\Payment\Gateway\Helper\SubjectReader::readStateObject($commandSubject);
+        /** @var PaymentDataObjectInterface $payment */
+        $payment = $this->subjectReader->readPayment($commandSubject);
+        $stateObject = $this->subjectReader->readStateObject($commandSubject);
 
-        /** @var \Magento\Payment\Model\InfoInterface $payment */
+        /** @var InfoInterface $payment */
         $payment = $payment->getPayment();
         $payment->setIsTransactionPending(true);
         $payment->setIsTransactionIsClosed(false);
@@ -27,8 +58,8 @@ class Initialize implements CommandInterface
 
         $stateObject->setIsNotified(false);
 
-        $stateObject->setState(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
-        $stateObject->setStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT);
+        $stateObject->setState(Order::STATE_PENDING_PAYMENT);
+        $stateObject->setStatus(Order::STATE_PENDING_PAYMENT);
 
         $stateObject->setIsNotified(false);
 
