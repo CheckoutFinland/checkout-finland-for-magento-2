@@ -144,6 +144,7 @@ class Index extends \Magento\Framework\App\Action\Action
             $this->_redirect('checkout/cart');
         }
 
-        return; //TODO: error log
+        $this->messageManager->addErrorMessage(__('Order processing has been aborted. Please contact customer service.'));
+        $this->_redirect('checkout/cart');
     }
 }
