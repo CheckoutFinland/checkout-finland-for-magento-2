@@ -132,8 +132,10 @@ class Index extends \Magento\Framework\App\Action\Action
             $status = $order->getStatus(); // getting current status
         }
 
+
         if (in_array($status,$successStatuses)) {
             $this->_redirect('checkout/onepage/success');
+            return;
         } else if (in_array($status,$cancelStatuses)) {
 
             /** @var string $failMessage */
@@ -142,6 +144,7 @@ class Index extends \Magento\Framework\App\Action\Action
             }
 
             $this->_redirect('checkout/cart');
+            return;
         }
 
         $this->messageManager->addErrorMessage(__('Order processing has been aborted. Please contact customer service.'));
