@@ -1,13 +1,12 @@
 <?php
 namespace Op\Checkout\Gateway\Request;
 
-use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Payment\Gateway\Helper\SubjectReader;
 use Magento\Payment\Gateway\Request\BuilderInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data;
-use \Magento\Framework\UrlInterface;
-use Magento\Framework\Serialize\Serializer\Json;
+use Psr\Log\LoggerInterface;
 
 class RefundDataBuilder implements BuilderInterface
 {
@@ -15,197 +14,95 @@ class RefundDataBuilder implements BuilderInterface
      * @var StoreManagerInterface
      */
     private $storeManager;
-    /**
-     * @var ApiData
-     */
-    private $apiData;
-    /**
-     * @var UrlInterface
-     */
-    protected $urlInterface;
-    /**
-     * @var Json
-     */
-    private $json;
+
     /**
      * @var Data
      */
     private $opHelper;
 
-    protected $currentOrder;
-    protected $orderItems;
+    /**
+     * @var LoggerInterface
+     */
+    private $log;
+    /**
+     * @var SubjectReader
+     */
+    private $subjectReader;
 
     /**
      * RefundDataBuilder constructor.
      *
      * @param StoreManagerInterface $storeManager
-     * @param ApiData $apiData
-     * @param UrlInterface $urlInterface
-     * @param Json $json
      * @param Data $opHelper
+     * @param SubjectReader $subjectReader
+     * @param LoggerInterface $log
      */
     public function __construct(
         StoreManagerInterface $storeManager,
-        ApiData $apiData,
-        UrlInterface $urlInterface,
-        Json $json,
-        Data $opHelper
+        Data $opHelper,
+        SubjectReader $subjectReader,
+        LoggerInterface $log
     ) {
         $this->opHelper = $opHelper;
         $this->storeManager = $storeManager;
-        $this->apiData = $apiData;
-        $this->json = $json;
-        $this->urlInterface = $urlInterface;
+        $this->log = $log;
+        $this->subjectReader = $subjectReader;
     }
 
     /**
      * @param array $buildSubject
      * @return array
+     * @throws LocalizedException
      */
     public function build(array $buildSubject)
     {
-        $paymentDataObject = \Magento\Payment\Gateway\Helper\SubjectReader::readPayment($buildSubject);
-        $amount = \Magento\Payment\Gateway\Helper\SubjectReader::readAmount($buildSubject);
+        $paymentDataObject = $this->subjectReader->readPayment($buildSubject);
+        $amount = $this->subjectReader->readAmount($buildSubject);
 
-        $this->currentOrder = $paymentDataObject->getOrder();
-        $this->orderItems = $this->currentOrder->getItems();
+        $order = $paymentDataObject->getOrder();
+        $orderItems = $order->getItems();
         $payment = $paymentDataObject->getPayment();
 
-        // TODO: move checks to validator
+        $errMsg = null;
+
         if ($amount <= 0) {
-            throw new LocalizedException(__('Invalid amount for refund.'));
+            $errMsg = 'Invalid amount for refund.';
         }
 
         if (!$payment->getTransactionId()) {
-            throw new LocalizedException(__('Invalid transaction ID.'));
+            $errMsg = 'Invalid transaction ID.';
         }
 
-        if (count($this->getTaxRates()) !== 1) {
-            throw new LocalizedException(__('Cannot refund order with multiple tax rates. Please refund offline.'));
+        if (count($this->getTaxRates($orderItems)) !== 1) {
+            $errMsg = 'Cannot refund order with multiple tax rates. Please refund offline.';
         }
 
-        $body = $this->buildRefundRequest($amount);
-
-        if ($this->postRefundRequest($payment, $body)) {
-            return [
-                'trnsaction_id' => $payment->getTransactionId(),
-                'amount' => $amount
-            ];
+        if (isset($errMsg)) {
+            $this->log->error($errMsg);
+            $this->opHelper->processError($errMsg);
         }
-        throw new LocalizedException(__('Error refunding payment. Please try again or refund offline.'));
+
+        return [
+            'transaction_id' => $payment->getTransactionId(),
+            'parent_transaction_id' => $payment->getParentTransactionId(),
+            'amount' => $amount,
+            'order' => $order
+        ];
     }
 
     /**
-     * @param $payment
-     * @param $body
-     * @return bool
-     */
-    protected function postRefundRequest($payment, $body)
-    {
-        $transactionId = $payment->getParentTransactionId();
-
-        $uri = '/payments/' . $transactionId . '/refund';
-
-        //$bodyJson = json_encode($body);
-        $bodyJson = $this->json->serialize($body);
-
-        $response = $this->apiData->getResponse(
-            $uri,
-            '',
-            $this->opHelper->getMerchantId(),
-            $this->opHelper->getMerchantSecret(),
-            'post',
-            $transactionId,
-            $bodyJson
-        );
-
-        $status = $response['status'];
-        $data = $response['data'];
-
-        if ($status === 201) {
-            return true;
-        } elseif (($status === 422 || $status === 400) && $this->postRefundRequestEmail($payment, $body)) {
-            // TODO: 422 replaced with 400 ? should we add 4xx check here ?
-            return true;
-        } else {
-            //TODO: DEAL WITH ERROR ! DON'T JUST LOG IT !
-            $this->log->critical($data->status . ': ' . $data->message);
-            return false;
-        }
-    }
-
-    /**
-     * @param $payment
-     * @param $body
-     * @return bool
-     */
-    protected function postRefundRequestEmail($payment, $body)
-    {
-
-        $transactionId = $payment->getParentTransactionId();
-
-        $uri = '/payments/' . $transactionId . '/refund/email';
-        $body['email'] = $this->currentOrder->getBillingAddress()->getEmail();
-        $body = $this->json->serialize($body);
-
-        $response = $this->apiData->getResponse(
-            $uri,
-            '',
-            $this->opHelper->getMerchantId(),
-            $this->opHelper->getMerchantSecret(),
-            'post',
-            $transactionId,
-            $body
-        );
-        $status = $response['status'];
-        $data = $response['data'];
-
-        if ($status === 201) {
-            return true;
-        } else {
-            //TODO: FIX LOGGER
-            $this->log->critical($data->status . ': ' . $data->message);
-            return false;
-        }
-    }
-
-    /**
+     * @param $items
      * @return array
      */
-    protected function getTaxRates()
+    protected function getTaxRates($items)
     {
         $rates = [];
-        foreach ($this->orderItems as $item) {
+        foreach ($items as $item) {
             if ($item['price'] > 0) {
                 $rates[] = round($item['vat'] * 100);
             }
         }
 
         return array_unique($rates, SORT_NUMERIC);
-    }
-
-    /**
-     * @param $amount
-     * @return array
-     */
-    protected function buildRefundRequest($amount)
-    {
-        try {
-            $storeUrl = $this->storeManager
-                ->getStore()
-                ->getBaseUrl(UrlInterface::URL_TYPE_WEB, true);
-        } catch (NoSuchEntityException $e) {
-            $storeUrl = $this->urlInterface->getBaseUrl();
-        }
-
-        $body = [
-            'amount' => $amount * 100,
-            'callbackUrls' => [
-                'success' => $storeUrl,
-                'cancel' => $storeUrl,
-            ],
-        ];
-
-        return $body;
     }
 }

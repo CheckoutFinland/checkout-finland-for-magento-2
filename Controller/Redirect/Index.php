@@ -12,10 +12,13 @@ use Magento\Sales\Api\OrderManagementInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\OrderFactory;
+use Op\Checkout\Exceptions\CheckoutException;
 use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data as opHelper;
-use Psr\Log\LoggerInterface;
 use Op\Checkout\Gateway\Config\Config;
+use OpMerchantServices\SDK\Model\Provider;
+use OpMerchantServices\SDK\Response\PaymentResponse;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class Index
@@ -74,9 +77,10 @@ class Index extends \Magento\Framework\App\Action\Action
      */
     protected $gatewayConfig;
 
+    /**
+     * @var $errorMsg
+     */
     protected $errorMsg = null;
-
-
 
     /**
      * Index constructor.
@@ -151,7 +155,8 @@ class Index extends \Magento\Framework\App\Action\Action
                 $order = $order->loadByIncrementId(
                     $this->checkoutSession->getLastRealOrderId()
                 );
-                $responseData = $this->getResponseData($order, $selectedPaymentMethodId);
+
+                $responseData = $this->getResponseData($order);
                 $formData = $this->getFormFields(
                     $responseData,
                     $selectedPaymentMethodId
@@ -162,7 +167,7 @@ class Index extends \Magento\Framework\App\Action\Action
                 );
 
                 if ($this->gatewayConfig->getSkipBankSelection()) {
-                    $redirect_url = $responseData->href;
+                    $redirect_url = $responseData->getHref();
 
                     return $resultJson->setData(
                         [
@@ -189,7 +194,7 @@ class Index extends \Magento\Framework\App\Action\Action
             }
         } catch (\Exception $e) {
             // Error will be handled below
-            $this->logger->debug($e->getMessage());
+            $this->logger->error($e->getMessage());
         }
 
         if ($order) {
@@ -212,7 +217,7 @@ class Index extends \Magento\Framework\App\Action\Action
     }
 
     /**
-     * @param array $responseData
+     * @param PaymentResponse $responseData
      * @param $paymentMethodId
      * @return array
      */
@@ -220,9 +225,10 @@ class Index extends \Magento\Framework\App\Action\Action
     {
         $formFields = [];
 
-        foreach ($responseData->providers as $provider) {
-            if ($provider->id == $paymentMethodId) {
-                foreach ($provider->parameters as $parameter) {
+        /** @var Provider $provider */
+        foreach ($responseData->getProviders() as $provider) {
+            if ($provider->getId() == $paymentMethodId) {
+                foreach ($provider->getParameters() as $parameter) {
                     $formFields[$parameter->name] = $parameter->value;
                 }
             }
@@ -232,7 +238,7 @@ class Index extends \Magento\Framework\App\Action\Action
     }
 
     /**
-     * @param array $responseData
+     * @param PaymentResponse $responseData
      * @param $paymentMethodId
      * @return string
      */
@@ -240,9 +246,10 @@ class Index extends \Magento\Framework\App\Action\Action
     {
         $returnUrl = '';
 
-        foreach ($responseData->providers as $provider) {
-            if ($provider->id == $paymentMethodId) {
-                $returnUrl = $provider->url;
+        /** @var Provider $provider */
+        foreach ($responseData->getProviders() as $provider) {
+            if ($provider->getId() == $paymentMethodId) {
+                $returnUrl = $provider->getUrl();
             }
         }
 
@@ -251,55 +258,20 @@ class Index extends \Magento\Framework\App\Action\Action
 
     /**
      * @param Order $order
-     * @param string $methodId
-     * @return mixed
-     * @throws LocalizedException
+     * @return PaymentResponse
+     * @throws CheckoutException
      */
-    protected function getResponseData($order, $methodId)
+    protected function getResponseData($order)
     {
-        $uri = '/payments';
-        $merchantId = $this->opHelper->getMerchantId();
-        $merchantSecret = $this->opHelper->getMerchantSecret();
-        $method = 'post';
+        $response = $this->apiData->processApiRequest('payment', $order);
 
-        $response = $this->apiData->getResponse(
-            $uri,
-            $order,
-            $merchantId,
-            $merchantSecret,
-            $method,
-            $methodId
-        );
+        $errorMsg = $response['error'];
 
-        $status = $response['status'];
-        $data = $response['data'];
-
-        if (!isset($status)) {
-            $this->errorMsg = __(
-                'There was a problem processing your order contents'
-            );
-            throw new LocalizedException(
-                __('There was a problem processing your order contents')
-            );
+        if (isset($errorMsg)){
+            $this->errorMsg = ($errorMsg);
+            $this->opHelper->processError($errorMsg);
         }
-        if ($status === 422 || $status === 400 || $status === 404) {
 
-            if (strpos($data, "Sum of purchase item amounts does not match total amount") !== false){
-                $this->errorMsg = __(
-                    'A problem occurred in order item tax calculations. Please contact store administrator.'
-                );
-                throw new LocalizedException(
-                    __('A problem occurred in order item tax calculations. Please contact store administrator.')
-                );
-            } else {
-                $this->errorMsg = __(
-                    'Couldn\'t successfully establish connection to payment provider'
-                );
-                throw new LocalizedException(
-                    __('Couldn\'t successfully establish connection to payment provider')
-                );
-            }
-        }
-        return $response['data'];
+        return $response["data"];
     }
 }

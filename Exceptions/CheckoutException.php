@@ -1,5 +1,5 @@
 <?php
-namespace Op\Checkout\Model;
+namespace Op\Checkout\Exceptions;
 
 use Magento\Framework\Exception\LocalizedException;
 
