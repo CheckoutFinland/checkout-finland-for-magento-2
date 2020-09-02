@@ -150,6 +150,7 @@ class ApiData
         Order $order,
         RequestLogger $requestLogger,
         ResponseLogger $responseLogger,
+        TaxHelper $taxHelper,
         CheckoutHelper $helper,
         Config $resourceConfig,
         StoreManagerInterface $storeManager,
@@ -185,13 +186,15 @@ class ApiData
      * @param Order|null $order
      * @param $amount
      * @param $transactionId
+     * @param $methodId
      * @return mixed
      */
     public function processApiRequest(
         $requestType,
         $order = null,
         $amount = null,
-        $transactionId = null
+        $transactionId = null,
+        $methodId = null
     ) {
         $response["data"] = null;
         $response["error"] = null;
@@ -210,7 +213,7 @@ class ApiData
             // Handle payment requests
             if ($requestType === 'payment') {
                 $opPayment = $this->paymentRequest;
-                $this->setPaymentRequestData($opPayment, $order);
+                $this->setPaymentRequestData($opPayment, $order, $methodId);
 
                 $response["data"] = $opClient->createPayment($opPayment);
 
@@ -296,19 +299,19 @@ class ApiData
     /**
      * @param PaymentRequest $opPayment
      * @param Order $order
+     * @param string $methodId
      * @return mixed
      * @throws \Exception
      */
-    protected function setPaymentRequestData($opPayment, $order)
+    protected function setPaymentRequestData($opPayment, $order, $methodId)
     {
         $billingAddress = $order->getBillingAddress();
         $shippingAddress = $order->getShippingAddress();
 
         $opPayment->setStamp(hash('sha256', time() . $order->getIncrementId()));
 
-        $reference = $this->gatewayConfig->getGenerateReferenceForOrder()
-            ? $this->helper->calculateOrderReferenceNumber($order->getIncrementId())
-            : $order->getIncrementId();
+        $reference = $this->helper->getReference($order);
+
         $opPayment->setReference($reference);
 
         $opPayment->setCurrency($order->getOrderCurrencyCode())->setAmount(round($order->getGrandTotal() * 100));
@@ -326,7 +329,7 @@ class ApiData
 
         $opPayment->setLanguage($this->helper->getStoreLocaleForPaymentProvider());
 
-        $items = $this->getOrderItemLines($order);
+        $items = $this->getOrderItemLines($order, $methodId);
 
         $opPayment->setItems($items);
 
@@ -422,12 +425,13 @@ class ApiData
 
     /**
      * @param Order $order
+     * @param string $methodId
      * @return array
      * @throws \Exception
      */
-    protected function getOrderItemLines($order)
+    protected function getOrderItemLines($order, $methodId)
     {
-        $orderItems = $this->itemArgs($order);
+        $orderItems = $this->itemArgs($order, $methodId);
         $orderTotal = round($order->getGrandTotal() * 100);
 
         $items = array_map(
@@ -546,9 +550,10 @@ class ApiData
 
     /**
      * @param Order $order
+     * @param string $methodId
      * @return array|null
      */
-    protected function itemArgs($order)
+    protected function itemArgs($order, $methodId)
     {
         $items = [];
 
@@ -579,7 +584,7 @@ class ApiData
                     'title' => $item->getName(),
                     'code' => $item->getSku(),
                     'amount' => floatval($item->getQtyOrdered()),
-                    'price' => floatval($item->getPriceInclTax()),
+                    'price' => in_array($methodId, $this->collectorMethods) ? floatval($item->getPriceInclTax()) - ($discountIncl / $item->getQtyOrdered()) : floatval($item->getPriceInclTax()),
                     'vat' => round(floatval($item->getTaxPercent()))
                 ];
             }
