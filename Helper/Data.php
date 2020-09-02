@@ -6,34 +6,38 @@ use Magento\Framework\App\Helper\Context;
 use Magento\Framework\Escaper;
 use Magento\Framework\Locale\Resolver;
 use Magento\Sales\Model\Order;
-use Op\Checkout\Gateway\Config\Config as GatewayConfig;
+use Magento\Tax\Helper\Data as TaxHelper;
+use Op\Checkout\Exceptions\CheckoutException;
+use Op\Checkout\Exceptions\TransactionSuccessException;
+use Op\Checkout\Gateway\Config\Config;
+use Op\Checkout\Logger\Request\RequestLogger;
+use Op\Checkout\Logger\Response\ResponseLogger;
 
 /**
  * Class Data
  */
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
-    protected $_storeManager;
-    protected $encryptor;
-    protected $escaper;
-    protected $methods = [];
+    const LOGO = 'payment/opcheckout/logo';
+
     /**
      * @var Resolver
      */
     private $localeResolver;
-
-    protected $methodCodes = [\Op\Checkout\Model\ConfigProvider::CODE];
-
-    const MERCHANT_SECRET_PATH = 'payment/opcheckout/merchant_secret';
-    const MERCHANT_ID_PATH = 'payment/opcheckout/merchant_id';
-    const DEBUG_LOG = 'payment/opcheckout/debuglog';
-    const RESPONSE_LOG = 'payment/opcheckout/response_log';
-    const REQUEST_LOG = 'payment/opcheckout/request_log';
-    const DEFAULT_ORDER_STATUS = 'payment/opcheckout/order_status';
-    const NOTIFICATION_EMAIL = 'payment/opcheckout/recipient_email';
-    const LOGO = 'payment/opcheckout/logo';
     /**
-     * @var GatewayConfig
+     * @var TaxHelper
+     */
+    private $taxHelper;
+    /**
+     * @var RequestLogger
+     */
+    private $requestLogger;
+    /**
+     * @var ResponseLogger
+     */
+    private $responseLogger;
+    /**
+     * @var Config
      */
     private $gatewayConfig;
 
@@ -41,124 +45,26 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * Helper class constructor.
      *
      * @param Context $context
-     * @param Escaper $escaper
-     * @param \Magento\Framework\Encryption\EncryptorInterface $encryptor
-     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param Resolver $localeResolver
-     * @param GatewayConfig $gatewayConfig
+     * @param TaxHelper $taxHelper
+     * @param RequestLogger $requestLogger
+     * @param ResponseLogger $responseLogger
+     * @param Config $gatewayConfig
      */
     public function __construct(
         Context $context,
-        Escaper $escaper,
-        \Magento\Framework\Encryption\EncryptorInterface $encryptor,
-        \Magento\Store\Model\StoreManagerInterface $storeManager,
         Resolver $localeResolver,
-        GatewayConfig $gatewayConfig
+        TaxHelper $taxHelper,
+        RequestLogger $requestLogger,
+        ResponseLogger $responseLogger,
+        Config $gatewayConfig
     ) {
-        parent::__construct($context);
-        $this->encryptor = $encryptor;
-        $this->_storeManager = $storeManager;
-        $this->escaper = $escaper;
         $this->localeResolver = $localeResolver;
+        $this->taxHelper = $taxHelper;
+        $this->requestLogger = $requestLogger;
+        $this->responseLogger = $responseLogger;
         $this->gatewayConfig = $gatewayConfig;
-    }
-
-    /**
-     * @param $config_path
-     * @return mixed
-     */
-    public function getConfig($config_path)
-    {
-        return $this->scopeConfig->getValue(
-            $config_path,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-        );
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getDefaultOrderStatus()
-    {
-        return $this->getConfig(self::DEFAULT_ORDER_STATUS);
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getDebugLoggerStatus()
-    {
-        return $this->getConfig(self::DEBUG_LOG);
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getResponseLog()
-    {
-        return $this->getConfig(self::RESPONSE_LOG);
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getRequestLog()
-    {
-        return $this->getConfig(self::REQUEST_LOG);
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getMerchantId()
-    {
-        return $this->getConfig(self::MERCHANT_ID_PATH);
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getNotificationEmail()
-    {
-        return $this->getConfig(self::NOTIFICATION_EMAIL);
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getMerchantSecret()
-    {
-        //return $merchant_sercret;
-        $merchant_sercret = $this->getConfig(self::MERCHANT_SECRET_PATH);
-        return $this->encryptor->decrypt($merchant_sercret);
-    }
-
-    /**
-     * @param $string
-     * @return bool
-     */
-    public function isJson($string)
-    {
-        json_decode($string);
-        return (json_last_error() == JSON_ERROR_NONE);
-    }
-
-    /**
-     * @param $code
-     * @return mixed
-     */
-    public function getPaymentRedirectUrl($code)
-    {
-        return $this->methods[$code]->getPaymentRedirectUrl();
-    }
-
-    /**
-     * @param $code
-     * @return mixed
-     */
-    public function getEnabledPaymentMethodGroups($code)
-    {
-        return $this->methods[$code]->getEnabledPaymentMethodGroups();
+        parent::__construct($context);
     }
 
     /**
@@ -212,6 +118,87 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getIdFromOrderReferenceNumber($reference)
     {
         return preg_replace('/\s+/', '', substr($reference, 1, -1));
+    }
+
+    /**
+     * @param Order $order
+     * @return mixed
+     */
+    public function getDiscountData(Order $order)
+    {
+        $discountIncl = 0;
+        $discountExcl = 0;
+
+        // Get product discount amounts
+        foreach ($order->getAllItems() as $item) {
+            if (!$this->taxHelper->priceIncludesTax()) {
+                $discountExcl += $item->getDiscountAmount();
+                $discountIncl += $item->getDiscountAmount() * (($item->getTaxPercent() / 100) + 1);
+            } else {
+                $discountExcl += $item->getDiscountAmount() / (($item->getTaxPercent() / 100) + 1);
+                $discountIncl += $item->getDiscountAmount();
+            }
+        }
+
+        // Get shipping tax rate
+        if ((float)$order->getShippingInclTax() && (float)$order->getShippingAmount()) {
+            $shippingTaxRate = $order->getShippingInclTax() / $order->getShippingAmount();
+        } else {
+            $shippingTaxRate = 1;
+        }
+
+        // Add / exclude shipping tax
+        $shippingDiscount = (float)$order->getShippingDiscountAmount();
+        if (!$this->taxHelper->priceIncludesTax()) {
+            $discountIncl += $shippingDiscount * $shippingTaxRate;
+            $discountExcl += $shippingDiscount;
+        } else {
+            $discountIncl += $shippingDiscount;
+            $discountExcl += $shippingDiscount / $shippingTaxRate;
+        }
+
+        $return = new \Magento\Framework\DataObject();
+        return $return->setDiscountInclTax($discountIncl)->setDiscountExclTax($discountExcl);
+    }
+
+    /**
+     * @param string $logType
+     * @param string $level
+     * @param mixed $data
+     */
+    public function logCheckoutData($logType, $level, $data)
+    {
+        if ($logType === 'request' && $this->gatewayConfig->getRequestLog() == true) {
+            if ($level === 'error') {
+                $this->requestLogger->requestErrorLog($level, $data);
+            } else {
+                $this->requestLogger->requestInfoLog($level, $data);
+            }
+        }
+        if ($logType === 'response' && $this->gatewayConfig->getResponseLog() == true) {
+            if ($level === 'error') {
+                $this->responseLogger->responseErrorLog($level, $data);
+            } else {
+                $this->responseLogger->responseInfoLog($level, $data);
+            }
+        }
+    }
+
+    /**
+     * @param $errorMessage
+     * @throws CheckoutException
+     */
+    public function processError($errorMessage)
+    {
+        throw new CheckoutException(__($errorMessage));
+    }
+
+    /**
+     * @throws TransactionSuccessException
+     */
+    public function processSuccess()
+    {
+        throw new TransactionSuccessException(__('Success'));
     }
 
     /**

@@ -7,9 +7,9 @@ use Magento\Framework\App\CacheInterface;
 use Magento\Quote\Model\QuoteRepository;
 use Op\Checkout\Gateway\Config\Config;
 use Op\Checkout\Gateway\Validator\ResponseValidator;
-use Op\Checkout\Model\CheckoutException;
+use Op\Checkout\Exceptions\CheckoutException;
 use Op\Checkout\Model\ReceiptDataProvider;
-use Op\Checkout\Model\TransactionSuccessException;
+use Op\Checkout\Exceptions\TransactionSuccessException;
 
 /**
  * Class ProcessPayment
