@@ -13,6 +13,11 @@ This payment module has the following features:
 - Support for multiple stores within a single Magento 2 instance
 
 ## Installation
+
+#### Via Composer
+
+<b>After introducing OP Payment Service PHP-SDK in version 1.2.0, the module only supports installation via composer.</b>
+
 Steps:
 1. Make sure that you have Magento file system owner rights.
 2. Navigate to your Magento root folder on the command line and enter: <br/>```composer require op-merchant-services/op-payment-service-for-magento-2:<latest_version> --no-update”```
