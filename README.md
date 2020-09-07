@@ -20,7 +20,7 @@ This payment module has the following features:
 
 Steps:
 1. Make sure that you have Magento file system owner rights.
-2. Navigate to your Magento root folder on the command line and enter: <br/>```composer require op-merchant-services/op-payment-service-for-magento-2:<latest_version> --no-update”```
+2. Navigate to your Magento root folder on the command line and enter: <br/>```composer require op-merchant-services/op-payment-service-for-magento-2:<latest_version> --no-update```
 3. If your credentials are asked, enter your Magento marketplace access keys.
 4. Enter “composer update” on the command line
 5. Run the following commands: <br/> ``` php bin/magento module:enable Op_Checkout ``` <br/> ```php bin/magento setup:upgrade``` <br/>```php bin/magento setup:di:compile``` <br/>```bin/magento setup:static-content:deploy``` 
