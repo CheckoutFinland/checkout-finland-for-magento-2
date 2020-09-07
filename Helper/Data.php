@@ -97,15 +97,16 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function calculateOrderReferenceNumber($incrementId)
     {
-        $prefix = '1';
+        $prefixedId = '1' . $incrementId;
+
         $sum = 0;
-        $length = strlen($incrementId);
+        $length = strlen($prefixedId);
 
         for ($i = 0; $i < $length; ++$i) {
-            $sum += substr($incrementId, -1 - $i, 1) * [7, 3, 1][$i % 3];
+            $sum += substr($prefixedId, -1 - $i, 1) * [7, 3, 1][$i % 3];
         }
         $num = (10 - $sum % 10) % 10;
-        $referenceNum = $prefix . $incrementId . $num;
+        $referenceNum = $prefixedId . $num;
 
         return trim(chunk_split($referenceNum, 5, ' '));
     }
