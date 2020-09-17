@@ -615,7 +615,7 @@ class ApiData
         }
 
         // Add discount row
-        if (abs($order->getDiscountAmount()) > 0) {
+        if (abs($order->getDiscountAmount()) > 0 && !in_array($methodId, $this->collectorMethods)) {
             $discountData = $this->helper->getDiscountData($order);
             $discountInclTax = $discountData->getDiscountInclTax();
             $discountExclTax = $discountData->getDiscountExclTax();
