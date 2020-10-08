@@ -16,7 +16,7 @@
     }
   ],
   "require": {
-    "php": "~7.1.3||~7.2.0||~7.3.0",
+    "php": "^7.1",
     "op-merchant-services/op-payment-service-php-sdk": "1.3.*"
   },
   "type": "magento2-module",
