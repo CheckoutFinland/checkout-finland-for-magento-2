@@ -23,6 +23,7 @@ use Op\Checkout\Gateway\Config\Config;
 use Op\Checkout\Gateway\Validator\ResponseValidator;
 use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data as opHelper;
+use Op\Checkout\Setup\Recurring;
 
 /**
  * Class ReceiptDataProvider
@@ -319,8 +320,8 @@ class ReceiptDataProvider
         $orderState = $this->gatewayConfig->getDefaultOrderStatus();
 
         if ($paymentVerified === 'pending') {
-            $this->currentOrder->setState('pending_opcheckout');
-            $this->currentOrder->setStatus('pending_opcheckout');
+            $this->currentOrder->setState(Recurring::ORDER_STATE_CUSTOM_CODE);
+            $this->currentOrder->setStatus(Recurring::ORDER_STATUS_CUSTOM_CODE);
             $this->currentOrder->addCommentToStatusHistory(__('Pending payment from OP Payment Service'));
         } else {
             $this->currentOrder->setState($orderState)->setStatus($orderState);
