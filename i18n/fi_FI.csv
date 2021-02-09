@@ -78,3 +78,4 @@ Shipping,Toimitus
 "No payment method selected","Ei valittua maksutapaa"
 "A problem occurred in order item tax calculations. Please contact store administrator.","Tilauksen verolaskennassa tapahtui ongelma. Ota yhteyttä kaupan ylläpitäjään."
 "Order processing has been aborted. Please contact customer service.","Tilauksen käsittelyssä ilmeni ongelma. Ota tarvittaessa yhteyttä asiakaspalveluun."
+"You will be redirected to OP Payment Service.","Sinut ohjataan maksupalveluun"
