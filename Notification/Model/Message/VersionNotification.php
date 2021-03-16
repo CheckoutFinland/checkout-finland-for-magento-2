@@ -1,6 +1,6 @@
 <?php
 
-namespace OP\Checkout\Notification\Model\Message;
+namespace Op\Checkout\Notification\Model\Message;
 
 class VersionNotification implements \Magento\Framework\Notification\MessageInterface
 {
