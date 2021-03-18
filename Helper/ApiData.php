@@ -305,7 +305,7 @@ class ApiData
      */
     protected function setPaymentRequestData($opPayment, $order, $methodId)
     {
-        $billingAddress = $order->getBillingAddress();
+        $billingAddress = $order->getBillingAddress() ?? $order->getShippingAddress();
         $shippingAddress = $order->getShippingAddress();
 
         $opPayment->setStamp(hash('sha256', time() . $order->getIncrementId()));
