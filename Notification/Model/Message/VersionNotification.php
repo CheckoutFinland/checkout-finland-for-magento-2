@@ -42,15 +42,16 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
     {
         // Only execute the query the first time you access the Admin page
 //        if ($this->authSession->isFirstPageAfterLogin()) {
-        $this->addNotification();
+        //$this->addNotification();
         try {
+            $dateModel = $this->dateTimeFactory->create();
             $githubContent = $this->getDecodedContentFromGithub();
             $githubContent['tag_name'] = $this->getVersionFrom($githubContent['tag_name']);
             $this->setSessionData("OPCheckoutGithubVersion", $githubContent);
-            $title = "OP Checkout extension version " . $githubContent['tag_name'] . " available!";
+            $title = "New OP Checkout extension version " . $githubContent['tag_name'] . " available!";
             $versionData[] = [
                 'severity' => self::SEVERITY_CRITICAL,
-                'date_added' => $githubContent['published_at'],
+                'date_added' => date('Y-m-d H:i:s', strtotime("2021-04-05")),
                 'title' => $title,
                 'description' => $githubContent['body'],
                 'url' => $githubContent['html_url'],
@@ -61,7 +62,7 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
              * otherwise it will create it and add it to the inbox.
              */
             $this->inboxFactory->create()->parse(array_reverse($versionData));
-
+            return true;
             /*
              * This will compare the currently installed version with the latest available one.
              * A message will appear after the login if the two are not matching.
