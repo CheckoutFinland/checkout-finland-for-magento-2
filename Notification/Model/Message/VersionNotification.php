@@ -44,17 +44,12 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
 //        if ($this->authSession->isFirstPageAfterLogin()) {
         //$this->addNotification();
         try {
-            $dateModel = $this->dateTimeFactory->create();
-            $githubContent = $this->getDecodedContentFromGithub();
-            $githubContent['tag_name'] = $this->getVersionFrom($githubContent['tag_name']);
-            $this->setSessionData("OPCheckoutGithubVersion", $githubContent);
-            $title = "New OP Checkout extension version " . $githubContent['tag_name'] . " available!";
             $versionData[] = [
-                'severity' => self::SEVERITY_CRITICAL,
-                'date_added' => date('Y-m-d H:i:s', strtotime("2021-04-05")),
-                'title' => $title,
-                'description' => $githubContent['body'],
-                'url' => $githubContent['html_url'],
+                'severity' => "1",
+                'title' => "New OP version available",
+                'date_added' => date('Y-m-d H:i:s'),
+                'description' => sprintf("Product Sync failedasdasd "),
+                'url' => "http://support.klevu.com/knowledgebase/base-urls/"
             ];
 
             /*
