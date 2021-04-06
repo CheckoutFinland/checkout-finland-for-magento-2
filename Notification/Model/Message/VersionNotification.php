@@ -107,7 +107,7 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
 
     public function addNotification()
     {
-        $this->notifierPool->addCritical(
+        $this->notifierPool->addNotice(
             'New version of OP checkout out!',
             'Message description text.'
         );
