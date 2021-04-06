@@ -42,35 +42,35 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
     {
         // Only execute the query the first time you access the Admin page
 //        if ($this->authSession->isFirstPageAfterLogin()) {
-            $this->addNotification();
-            try {
-                $githubContent = $this->getDecodedContentFromGithub();
-                $githubContent['tag_name'] = $this->getVersionFrom($githubContent['tag_name']);
-                $this->setSessionData("OPCheckoutGithubVersion", $githubContent);
-                $title = "OP Checkout extension version " . $githubContent['tag_name'] . " available!";
-                $versionData[] = [
-                    'severity' => self::SEVERITY_NOTICE,
-                    'date_added' => $githubContent['published_at'],
-                    'title' => $title,
-                    'description' => $githubContent['body'],
-                    'url' => $githubContent['html_url'],
-                ];
+        $this->addNotification();
+        try {
+            $githubContent = $this->getDecodedContentFromGithub();
+            $githubContent['tag_name'] = $this->getVersionFrom($githubContent['tag_name']);
+            $this->setSessionData("OPCheckoutGithubVersion", $githubContent);
+            $title = "OP Checkout extension version " . $githubContent['tag_name'] . " available!";
+            $versionData[] = [
+                'severity' => self::SEVERITY_CRITICAL,
+                'date_added' => $githubContent['published_at'],
+                'title' => $title,
+                'description' => $githubContent['body'],
+                'url' => $githubContent['html_url'],
+            ];
 
-                /*
-                 * The parse function checks if the $versionData message exists in the inbox,
-                 * otherwise it will create it and add it to the inbox.
-                 */
-                $this->inboxFactory->create()->parse(array_reverse($versionData));
+            /*
+             * The parse function checks if the $versionData message exists in the inbox,
+             * otherwise it will create it and add it to the inbox.
+             */
+            $this->inboxFactory->create()->parse(array_reverse($versionData));
 
-                /*
-                 * This will compare the currently installed version with the latest available one.
-                 * A message will appear after the login if the two are not matching.
-                 */
-                if ($this->getModuleVersion() != $githubContent['tag_name']) {
-                    return true;
-                }
-            } catch (\Exception $e) {
-                return false;
+            /*
+             * This will compare the currently installed version with the latest available one.
+             * A message will appear after the login if the two are not matching.
+             */
+            if ($this->getModuleVersion() != $githubContent['tag_name']) {
+                return true;
+            }
+        } catch (\Exception $e) {
+            return false;
 //            }
         }
         return false;
@@ -102,7 +102,7 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
      */
     public function getSeverity()
     {
-        return self::SEVERITY_MAJOR;
+        return self::SEVERITY_CRITICAL;
     }
 
     public function addNotification()
