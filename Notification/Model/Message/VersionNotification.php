@@ -13,7 +13,7 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
         \Magento\Backend\Model\Auth\Session $authSession,
         \Magento\AdminNotification\Model\InboxFactory $inboxFactory,
         \Magento\Framework\Component\ComponentRegistrarInterface $componentRegistrar,
-        \Magento\Framework\Notification\NotifierInterface $notifierPool,
+        \Magento\Framework\Notification\NotifierInterface $notifierPool
     ) {
         $this->authSession = $authSession;
         $this->inboxFactory = $inboxFactory;
