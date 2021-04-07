@@ -13,7 +13,7 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
         \Magento\Backend\Model\Auth\Session $authSession,
         \Magento\AdminNotification\Model\InboxFactory $inboxFactory,
         \Magento\Framework\Component\ComponentRegistrarInterface $componentRegistrar,
-        \Magento\Framework\Notification\NotifierInterface $notifierPool
+        \Magento\Framework\Notification\NotifierInterface $notifierPool,
     ) {
         $this->authSession = $authSession;
         $this->inboxFactory = $inboxFactory;
@@ -40,18 +40,20 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
      */
     public function isDisplayed()
     {
-        // Only execute the query the first time you access the Admin page
-//        if ($this->authSession->isFirstPageAfterLogin()) {
-            $this->addNotification();
-            try {
-                $githubContent = $this->getDecodedContentFromGithub();
-                $githubContent['tag_name'] = $this->getVersionFrom($githubContent['tag_name']);
-                $this->setSessionData("OPCheckoutGithubVersion", $githubContent);
-                $title = "OP Checkout extension version " . $githubContent['tag_name'] . " available!";
+        try {
+            $githubContent = $this->getDecodedContentFromGithub();
+            $githubContent['tag_name'] = $this->getVersionFrom($githubContent['tag_name']);
+            $this->setSessionData("OPCheckoutGithubVersion", $githubContent);
+
+            /*
+             * This will compare the currently installed version with the latest available one.
+             * A message will appear after the login if the two are not matching.
+             */
+            if ($this->getModuleVersion() != $githubContent['tag_name']) {
                 $versionData[] = [
-                    'severity' => self::SEVERITY_NOTICE,
-                    'date_added' => $githubContent['published_at'],
-                    'title' => $title,
+                    'severity' => self::SEVERITY_CRITICAL,
+                    'date_added' => date('Y-m-d H:i:s'),
+                    'title' => "OP Checkout extension version " . $githubContent['tag_name'] . " available!",
                     'description' => $githubContent['body'],
                     'url' => $githubContent['html_url'],
                 ];
@@ -62,16 +64,10 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
                  */
                 $this->inboxFactory->create()->parse(array_reverse($versionData));
 
-                /*
-                 * This will compare the currently installed version with the latest available one.
-                 * A message will appear after the login if the two are not matching.
-                 */
-                if ($this->getModuleVersion() != $githubContent['tag_name']) {
-                    return true;
-                }
-            } catch (\Exception $e) {
-                return false;
-//            }
+                return true;
+            }
+        } catch (\Exception $e) {
+            return false;
         }
         return false;
     }
@@ -102,15 +98,7 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
      */
     public function getSeverity()
     {
-        return self::SEVERITY_MAJOR;
-    }
-
-    public function addNotification()
-    {
-        $this->notifierPool->addNotice(
-            'New version of OP checkout out!',
-            'Message description text.'
-        );
+        return self::SEVERITY_CRITICAL;
     }
 
     private function getDecodedContentFromGithub()
@@ -122,12 +110,14 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
         curl_setopt($ch, CURLOPT_USERAGENT, 'magento');
         $content = curl_exec($ch);
         curl_close($ch);
-        $json = json_decode($content, true);
-        return $json;
+        return json_decode($content, true);
     }
 
     /**
      * Set the current value for the backend session
+     * @param $key
+     * @param $value
+     * @return mixed
      */
     private function setSessionData($key, $value)
     {
@@ -136,6 +126,9 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
 
     /**
      * Retrieve the session value
+     * @param $key
+     * @param bool $remove
+     * @return mixed
      */
     private function getSessionData($key, $remove = false)
     {
