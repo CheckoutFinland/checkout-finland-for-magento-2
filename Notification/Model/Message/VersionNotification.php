@@ -4,21 +4,39 @@ namespace Op\Checkout\Notification\Model\Message;
 
 class VersionNotification implements \Magento\Framework\Notification\MessageInterface
 {
+    /**
+     * @var \Magento\Backend\Model\Auth\Session
+     */
     private $authSession;
+    /**
+     * @var \Magento\AdminNotification\Model\InboxFactory
+     */
     private $inboxFactory;
+    /**
+     * @var \Magento\Framework\Component\ComponentRegistrarInterface
+     */
     private $componentRegistrar;
+    /**
+     * @var \Magento\Framework\Notification\NotifierInterface
+     */
     private $notifierPool;
+    /**
+     * @var \Op\Checkout\Helper\Version
+     */
+    private $versionHelper;
 
     public function __construct(
         \Magento\Backend\Model\Auth\Session $authSession,
         \Magento\AdminNotification\Model\InboxFactory $inboxFactory,
         \Magento\Framework\Component\ComponentRegistrarInterface $componentRegistrar,
-        \Magento\Framework\Notification\NotifierInterface $notifierPool
+        \Magento\Framework\Notification\NotifierInterface $notifierPool,
+        \Op\Checkout\Helper\Version $versionHelper
     ) {
         $this->authSession = $authSession;
         $this->inboxFactory = $inboxFactory;
         $this->componentRegistrar = $componentRegistrar;
         $this->notifierPool = $notifierPool;
+        $this->versionHelper = $versionHelper;
     }
 
     const MESSAGE_IDENTITY = 'OP Checkout Version Control message';
@@ -41,15 +59,14 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
     public function isDisplayed()
     {
         try {
-            $githubContent = $this->getDecodedContentFromGithub();
-            $githubContent['tag_name'] = $this->getVersionFrom($githubContent['tag_name']);
+            $githubContent = $this->versionHelper->getDecodedContentFromGithub();
             $this->setSessionData("OPCheckoutGithubVersion", $githubContent);
 
             /*
              * This will compare the currently installed version with the latest available one.
              * A message will appear after the login if the two are not matching.
              */
-            if ($this->getModuleVersion() != $githubContent['tag_name']) {
+            if ('v' . $this->versionHelper->getVersion() != $githubContent['tag_name']) {
                 $versionData[] = [
                     'severity' => self::SEVERITY_CRITICAL,
                     'date_added' => date('Y-m-d H:i:s'),
@@ -85,8 +102,8 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
             "<a href= \"" . $githubContent['html_url'] . "\" target='_blank'> " . $githubContent['tag_name'] . "!</a>"
         );
         $message .= __(
-            " You are running the " . $this->getModuleVersion(
-            ) . " version. We advise to update your extension."
+            " You are running the v" . $this->versionHelper->getVersion() .
+            " version. We advise to update your extension."
         );
         return __($message);
     }
@@ -99,18 +116,6 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
     public function getSeverity()
     {
         return self::SEVERITY_CRITICAL;
-    }
-
-    private function getDecodedContentFromGithub()
-    {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://api.github.com/repos/OPMerchantServices/op-payment-service-for-magento-2/releases/latest');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'magento');
-        $content = curl_exec($ch);
-        curl_close($ch);
-        return json_decode($content, true);
     }
 
     /**
@@ -133,37 +138,5 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
     private function getSessionData($key, $remove = false)
     {
         return $this->authSession->getData($key, $remove);
-    }
-
-    /**
-     * Get the current module version from composer.json
-     * @return mixed|string
-     */
-    private function getModuleVersion()
-    {
-        $moduleDir = $this->componentRegistrar->getPath(
-            \Magento\Framework\Component\ComponentRegistrar::MODULE,
-            'Op_Checkout'
-        );
-
-        $composerJson = file_get_contents($moduleDir . '/composer.json');
-        $composerJson = json_decode($composerJson, true);
-
-        if (empty($composerJson['version'])) {
-            return "Version is not available in composer.json";
-        }
-
-        return $composerJson['version'];
-    }
-
-    /**
-     * Extract a version number from the tag name
-     * @param $tagName
-     * @return false|string
-     */
-    private function getVersionFrom($tagName)
-    {
-        $vpos = strpos($tagName, 'v');
-        return $vpos !== false ? substr($tagName, $vpos + 1) : $tagName;
     }
 }
