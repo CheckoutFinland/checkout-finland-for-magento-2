@@ -192,6 +192,15 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     }
 
     /**
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function getUseRecommendedTaxAlgorithm($storeId = null)
+    {
+        return $this->getValue(self::KEY_RECOMMENDED_TAX_ALGORITHM, $storeId);
+    }
+
+    /**
      * @return null|string
      */
     public function getInstructions()
