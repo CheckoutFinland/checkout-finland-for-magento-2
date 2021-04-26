@@ -30,14 +30,15 @@ class Version extends \Magento\Config\Block\System\Config\Form\Field
             $githubContent['tag_name'];
 
             if ($version != $githubContent['tag_name']) {
-                $html = '<strong style="color: red">' . $version . " - Newer version (" . $githubContent['tag_name'] .
-                    ") available. " . "<a href= \"" . $githubContent['html_url'] . "\" target='_blank'> " .
-                    "More details</a></strong>";
+                $html = '<strong style="color: red">' . $version . __(" - Newer version (%1) available. ", $githubContent['tag_name']) .
+                    "<a href= \"" . $githubContent['html_url'] . "\" target='_blank'> " .
+                    __("More details") . "</a></strong>";
             } else {
-                $html = '<strong style="color: green">' . $version . " - Latest version" . '</strong>';
+                $html = '<strong style="color: green">' . __("%1 - Latest version", $version) . '</strong>';
+
             }
         } catch (\Exception $e) {
-            return '<strong>' .  $version . " - Can't check for updates now"  . '</strong>';
+            return '<strong>' . __("%1 - Can't check for updates now", $version) . '</strong>';
         }
         return $html;
     }

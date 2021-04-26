@@ -70,7 +70,7 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
                 $versionData[] = [
                     'severity' => self::SEVERITY_CRITICAL,
                     'date_added' => date('Y-m-d H:i:s'),
-                    'title' => "OP Checkout extension version " . $githubContent['tag_name'] . " available!",
+                    'title' => __("OP Checkout extension version %1 available!", $githubContent['tag_name']),
                     'description' => $githubContent['body'],
                     'url' => $githubContent['html_url'],
                 ];
@@ -97,14 +97,12 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
     public function getText()
     {
         $githubContent = $this->getSessionData("OPCheckoutGithubVersion");
-        $message = __("A new Op Checkout extension version is now available: ");
+        $message = __('A new Op Checkout extension version is now available: ');
         $message .= __(
             "<a href= \"" . $githubContent['html_url'] . "\" target='_blank'> " . $githubContent['tag_name'] . "!</a>"
         );
-        $message .= __(
-            " You are running the v" . $this->versionHelper->getVersion() .
-            " version. We advise to update your extension."
-        );
+        $message .= __(" You are running the v%1 version. We advise to update your extension.",
+            $this->versionHelper->getVersion());
         return __($message);
     }
 
