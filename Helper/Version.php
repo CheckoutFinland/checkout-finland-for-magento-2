@@ -38,13 +38,13 @@ class Version
      */
     public function getDecodedContentFromGithub()
     {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, self::GIT_URL);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'magento');
-        $content = curl_exec($ch);
-        curl_close($ch);
-        return json_decode($content, true);
+        $options = [
+            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_CONNECTTIMEOUT => 1,
+            CURLOPT_USERAGENT => 'magento'
+        ];
+        $this->curlClient->setOptions($options);
+        $this->curlClient->get(self::GIT_URL);
+        return json_decode($this->curlClient->getBody(), true);
     }
 }
