@@ -27,7 +27,6 @@ class Version extends \Magento\Config\Block\System\Config\Form\Field
         $version = 'v' . $this->versionHelper->getVersion();
         try {
             $githubContent = $this->versionHelper->getDecodedContentFromGithub();
-            $githubContent['tag_name'];
 
             if ($version != $githubContent['tag_name']) {
                 $html = '<strong style="color: red">' . $version . __(" - Newer version (%1) available. ", $githubContent['tag_name']) .
