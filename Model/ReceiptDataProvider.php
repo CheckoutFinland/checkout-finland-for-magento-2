@@ -24,6 +24,7 @@ use Op\Checkout\Gateway\Validator\ResponseValidator;
 use Op\Checkout\Helper\ApiData;
 use Op\Checkout\Helper\Data as opHelper;
 use Op\Checkout\Setup\Recurring;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class ReceiptDataProvider
@@ -164,6 +165,10 @@ class ReceiptDataProvider
      * @var ApiData
      */
     private $apiData;
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * ReceiptDataProvider constructor.
@@ -186,6 +191,7 @@ class ReceiptDataProvider
      * @param transactionBuilder $transactionBuilder
      * @param Config $gatewayConfig
      * @param ApiData $apiData
+     * @param LoggerInterface $logger
      */
     public function __construct(
         Context $context,
@@ -206,7 +212,8 @@ class ReceiptDataProvider
         OrderInterface $orderInterface,
         transactionBuilder $transactionBuilder,
         Config $gatewayConfig,
-        ApiData $apiData
+        ApiData $apiData,
+        LoggerInterface $logger
     ) {
         $this->urlBuilder = $context->getUrl();
         $this->cache = $cache;
@@ -228,6 +235,7 @@ class ReceiptDataProvider
         $this->transactionBuilder = $transactionBuilder;
         $this->gatewayConfig = $gatewayConfig;
         $this->apiData = $apiData;
+        $this->logger = $logger;
     }
 
     /**
@@ -359,7 +367,8 @@ class ReceiptDataProvider
                     $this->currentOrder
                 )->save();
             } catch (LocalizedException $exception) {
-                $invoiceFailException = $exception->getMessage(); //TODO: log errors
+                $invoiceFailException = $exception->getMessage();
+                $this->logger->error($exception->getMessage());
             }
 
             if (isset($invoiceFailException)) {

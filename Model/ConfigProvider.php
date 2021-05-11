@@ -22,6 +22,7 @@ use Psr\Log\LoggerInterface;
 class ConfigProvider implements ConfigProviderInterface
 {
     const CODE = 'opcheckout';
+    const CREDITCARD_GROUP_ID = 'creditcard';
 
     protected $methodCodes = [
         self::CODE,
@@ -242,9 +243,10 @@ class ConfigProvider implements ConfigProviderInterface
 
         foreach ($responseData as $key => $method) {
             if ($method->getGroup() == $groupId) {
+                $id = $groupId === self::CREDITCARD_GROUP_ID ? $method->getId() . '-' . $i++ : $method->getId();
                 $methods[] = [
                     'checkoutId' => $method->getId(),
-                    'id' => $method->getId() . $i++,
+                    'id' => $id,
                     'name' => $method->getName(),
                     'group' => $method->getGroup(),
                     'icon' => $method->getIcon(),

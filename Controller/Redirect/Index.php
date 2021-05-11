@@ -139,11 +139,9 @@ class Index extends \Magento\Framework\App\Action\Action
                     = $this->getRequest()->getParam(
                     'preselected_payment_method_id'
                 );
-                $selectedPaymentMethodId = preg_replace(
-                    '/[0-9]{1,2}$/',
-                    '',
-                    $selectedPaymentMethodRaw
-                );
+                $selectedPaymentMethodId = strpos($selectedPaymentMethodRaw, '-') !== false
+                    ? explode('-', $selectedPaymentMethodRaw)[0]
+                    : $selectedPaymentMethodRaw;
 
                 if (empty($selectedPaymentMethodId)) {
                     $this->errorMsg = __('No payment method selected');
