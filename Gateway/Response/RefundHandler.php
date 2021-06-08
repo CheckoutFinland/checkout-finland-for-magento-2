@@ -45,6 +45,6 @@ class RefundHandler implements HandlerInterface
         $payment->setTransactionId($transactionId);
         $payment->setShouldCloseParentTransaction(false);
 
-        $this->messageManager->addSuccessMessage(__('Op Payment Service refund successful.'));
+        $this->messageManager->addSuccessMessage(__('Checkout Finland refund successful.'));
     }
 }

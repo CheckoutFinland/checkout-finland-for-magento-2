@@ -330,7 +330,7 @@ class ReceiptDataProvider
         if ($paymentVerified === 'pending') {
             $this->currentOrder->setState(Recurring::ORDER_STATE_CUSTOM_CODE);
             $this->currentOrder->setStatus(Recurring::ORDER_STATUS_CUSTOM_CODE);
-            $this->currentOrder->addCommentToStatusHistory(__('Pending payment from OP Payment Service'));
+            $this->currentOrder->addCommentToStatusHistory(__('Pending payment from Checkout Finland'));
         } else {
             $this->currentOrder->setState($orderState)->setStatus($orderState);
             $this->currentOrder->addCommentToStatusHistory(__('Payment has been completed'));

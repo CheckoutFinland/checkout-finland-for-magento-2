@@ -30,7 +30,7 @@ class Recurring implements InstallSchemaInterface
     /**
      * @var string
      */
-    const ORDER_STATUS_CUSTOM_LABEL = 'Pending OP Payment Service';
+    const ORDER_STATUS_CUSTOM_LABEL = 'Pending Checkout Finland';
 
     /**
      * @var StatusFactory

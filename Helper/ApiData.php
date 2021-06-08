@@ -207,7 +207,7 @@ class ApiData
                 'info',
                 'Creating '
                 . $requestType
-                . ' request to OP Payment Service API. '
+                . ' request to Checkout Finland API. '
                 . $orderLog = isset($order) ? 'Order Id: ' . $order->getId() : ''
             );
             // Handle payment requests
@@ -274,7 +274,7 @@ class ApiData
                 $this->helper->logCheckoutData(
                     'request',
                     'error',
-                    'Connection error to OP Payment Service API: '
+                    'Connection error to Checkout Finland API: '
                     . $e->getMessage()
                     . 'Error Code: '
                     . $e->getCode()
