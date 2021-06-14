@@ -198,7 +198,7 @@ class Index extends \Magento\Framework\App\Action\Action
         if ($order) {
             $this->orderManagementInterface->cancel($order->getId());
             $order->addCommentToStatusHistory(
-                __('Order canceled. Failed to redirect to Checkout Finland.')
+                __('Order canceled. Failed to redirect to Checkout Finland payment service.')
             );
             $this->orderRepositoryInterface->save($order);
         }
