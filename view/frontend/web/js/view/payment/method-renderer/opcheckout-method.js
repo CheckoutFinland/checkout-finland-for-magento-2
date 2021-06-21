@@ -41,7 +41,7 @@ define(
                     self = this;
                     this._super();
                     if (!self.getIsSuccess()) {
-                        self.addErrorMessage($t('Op Payment Service API credentials are incorrect. Please contact support.'));
+                        self.addErrorMessage($t('Checkout Finland API credentials are incorrect. Please contact support.'));
                     }
                     if (self.getSkipMethodSelection() == true) {
                         self.selectedPaymentMethodId(self.payMethod);

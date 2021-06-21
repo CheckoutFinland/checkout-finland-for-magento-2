@@ -39,7 +39,7 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
         $this->versionHelper = $versionHelper;
     }
 
-    const MESSAGE_IDENTITY = 'OP Checkout Version Control message';
+    const MESSAGE_IDENTITY = 'Checkout Finland Version Control message';
 
     /**
      * Retrieve unique system message identity
@@ -70,7 +70,7 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
                 $versionData[] = [
                     'severity' => self::SEVERITY_CRITICAL,
                     'date_added' => date('Y-m-d H:i:s'),
-                    'title' => __("OP Checkout extension version %1 available!", $githubContent['tag_name']),
+                    'title' => __("Checkout Finland extension version %1 available!", $githubContent['tag_name']),
                     'description' => $githubContent['body'],
                     'url' => $githubContent['html_url'],
                 ];
@@ -97,7 +97,7 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
     public function getText()
     {
         $githubContent = $this->getSessionData("OPCheckoutGithubVersion");
-        $message = __('A new Op Checkout extension version is now available: ');
+        $message = __('A new Checkout Finland extension version is now available: ');
         $message .= __(
             "<a href= \"" . $githubContent['html_url'] . "\" target='_blank'> " . $githubContent['tag_name'] . "!</a>"
         );
