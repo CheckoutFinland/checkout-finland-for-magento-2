@@ -206,7 +206,7 @@ class Config extends \Magento\Payment\Gateway\Config\Config
     public function getInstructions()
     {
         if ($this->getSkipBankSelection()) {
-            return __("You will be redirected to OP Payment Service.");
+            return __("You will be redirected to Checkout Finland payment service.");
         }
         return null;
     }

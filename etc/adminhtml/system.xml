@@ -6,7 +6,7 @@
                  showInStore="1">
             <group id="opcheckout" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1"
                    showInStore="1">
-                <label>OP Payment Service</label>
+                <label>Checkout Finland</label>
                 <field id="version" translate="label" type="label" sortOrder="1" showInDefault="1" showInWebsite="1"
                        showInStore="1">
                     <label>Version</label>
@@ -57,13 +57,13 @@
                 </field>
                 <field id="response_log" translate="label" type="select" sortOrder="52" showInDefault="1"
                        showInWebsite="1" showInStore="0" canRestore="1">
-                    <label>Enable OP Payment Service response logging</label>
+                    <label>Enable Checkout Finland response logging</label>
                     <comment>Log file: var/log/op_payment_service_response.log</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="request_log" translate="label" type="select" sortOrder="53" showInDefault="1"
                        showInWebsite="1" showInStore="0" canRestore="1">
-                    <label>Enable OP Payment Service request logging</label>
+                    <label>Enable Checkout Finland request logging</label>
                     <comment>Log file: var/log/op_payment_service_request.log</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>

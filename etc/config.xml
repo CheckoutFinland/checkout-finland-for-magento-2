@@ -4,7 +4,7 @@
   <default>
     <payment>
       <opcheckout>
-        <title>Op Payment Service</title>
+        <title>Checkout Finland</title>
         <model>OpCheckoutAdapter</model>
         <order_status>processing</order_status>
         <payment_action>authorize_capture</payment_action>

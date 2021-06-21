@@ -16,10 +16,17 @@ class Version
      */
     protected $moduleList;
 
+    /**
+     * @var \Magento\Framework\HTTP\Client\Curl
+     */
+    protected $curlClient;
+
     public function __construct(
-        \Magento\Framework\Module\ModuleListInterface $moduleList
+        \Magento\Framework\Module\ModuleListInterface $moduleList,
+        \Magento\Framework\HTTP\Client\Curl $curlClient
     ) {
         $this->moduleList = $moduleList;
+        $this->curlClient = $curlClient;
     }
 
     /**
