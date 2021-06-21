@@ -68,7 +68,7 @@ Shipping,Toimitus
 "Please navigate to your Magento orders, select the order in question, and click restore order. Note the stock.", "Ole hyvä, ja valitse kyseinen tilaus Magenton hallinnassa ja klikkaa Palauta tilaus. Huomioi varastosaldo."
 "Restore Order", "Palauta tilaus"
 "Are you sure you want to make changes to this order?", "Haluatko varmasti tehdä muutoksia tähän tilaukseen?"
-"Pending payment from Checkout Finland","Odottaa maksua Checkout Finlandistä"
+"Pending payment from Checkout Finland","Odottaa maksua Checkout Finlandista"
 "Order canceled. Failed to redirect to Checkout Finland.","Tilaus peruutettu. Ohjausta Checkout Finland -maksupalveluun ei voitu tehdä"
 "Checkout Finland API credentials are incorrect. Please contact support.","Checkout Finland -maksupalvelun tunnuksia ei löytynyt. Ole hyvä, ja ota yhteyttä asiakaspalveluun."
 "By confirming this purchase, you consent to the","Maksamalla tilauksen hyväksyt"
