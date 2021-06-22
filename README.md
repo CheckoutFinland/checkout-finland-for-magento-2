@@ -92,3 +92,16 @@ Available statuses:
 If you have multiple stores, you can set up the payment module differently depending on the selected store. In configuration settings, there is a selection for Store View.
 
 By changing the Store View, you can define different settings for each store within the Magento 2 instance.
+
+## Rounding problems with certain providers (Collector)
+
+In some cases, this module might send a so-called "rounding-row" item in the order data, which might result in an error if this value is negative (this has been observed with Collector method). This is related to how Magento calculates and rounds taxes and how this module compensates for possible mismatches between the total and sum of individual items.
+
+There are three algorithms for tax calculation in Magento which can be set in __Stores -> Configuration -> Sales -> Tax -> Tax Calculation Method Based On__
+- Unit Price based
+- Row Total based
+- Total based
+
+If the described error occurs when the calculation algorithm is Total based, changing it to Unit Price based might result in tax calculation with no mismatches. 
+
+__Note:__ Changing the setting does not mean that the Unit Price based algorithm is better than Total or Row Total based, all three can have rounding issues in certain situations that can be resolved by choosing one of the other algorithms. The algorithms end up with the same calculations majority of the time.
