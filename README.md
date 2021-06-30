@@ -12,6 +12,11 @@ This payment module has the following features:
 - Support for delayed payments (Collector etc.)
 - Support for multiple stores within a single Magento 2 instance
 
+## Updating
+
+<b>With the release of 1.3.0 the module has been rebranded. If updating from older versions this requires manually uninstalling the old version with the following command before updating:</b><br/>
+```composer remove op-merchant-services/op-payment-service-for-magento-2```
+
 ## Installation
 
 #### Via Composer
