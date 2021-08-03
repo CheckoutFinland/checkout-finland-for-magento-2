@@ -7,7 +7,7 @@ class Version
     /**
      * @var string
      */
-    const GIT_URL = 'https://api.github.com/repos/OPMerchantServices/op-payment-service-for-magento-2/releases/latest';
+    const GIT_URL = 'https://api.github.com/repos/CheckoutFinland/checkout-finland-for-magento-2/releases/latest';
 
     /**
      * For extension version
