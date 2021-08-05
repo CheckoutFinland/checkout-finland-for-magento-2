@@ -5,6 +5,8 @@ Checkout Finland's payment methods for your Magento 2 web store
 
 This module has been tested on Magento 2.4.2, 2.4.1 and 2.3.X {community|commerce} versions. Support for 2.2.X has ended and compatibility with older versions cannot be guaranteed.
 
+Magento system requirements per tested version can be found on https://devdocs.magento.com/guides/v2.4/install-gde/system-requirements.html
+
 ## Features
 This payment module has the following features:
 - Payment methods provided by Checkout Finland payment service
