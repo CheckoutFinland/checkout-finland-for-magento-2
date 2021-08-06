@@ -5,6 +5,8 @@ Checkout Finland's payment methods for your Magento 2 web store
 
 This module has been tested on Magento 2.4.2, 2.4.1 and 2.3.X {community|commerce} versions. Support for 2.2.X has ended and compatibility with older versions cannot be guaranteed.
 
+Magento system requirements per tested version can be found on https://devdocs.magento.com/guides/v2.4/install-gde/system-requirements.html
+
 ## Features
 This payment module has the following features:
 - Payment methods provided by Checkout Finland payment service
@@ -27,7 +29,7 @@ Steps:
 1. Make sure that you have Magento file system owner rights.
 2. Navigate to your Magento root folder on the command line and enter: <br/>```composer require checkout-finland/checkout-finland-for-magento-2:<latest_version> --no-update```
 3. If your credentials are asked, enter your Magento marketplace access keys.
-4. Enter “composer update” on the command line
+4. Enter command: <br/> ```composer update checkout-finland/checkout-finland-for-magento-2```
 5. Run the following commands: <br/> ``` php bin/magento module:enable Op_Checkout ``` <br/> ```php bin/magento setup:upgrade``` <br/>```php bin/magento setup:di:compile``` <br/>```bin/magento setup:static-content:deploy``` 
 6. Navigate to Magento admin interface and select __Stores -> Store Configuration -> Sales -> Payment Methods -> Checkout Finland__
 7. Enter your credentials and enable the module (Test credentials: _375917 - SAIPPUAKAUPPIAS_)
