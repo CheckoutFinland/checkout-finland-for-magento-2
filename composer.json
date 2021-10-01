@@ -17,7 +17,7 @@
   ],
   "require": {
     "php": "^7.1",
-    "checkout-finland/checkout-finland-php-sdk": "1.4.*",
+    "checkout-finland/checkout-finland-php-sdk": "1.5.*",
     "ext-curl": "*"
   },
   "type": "magento2-module",
