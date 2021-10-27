@@ -1,4 +1,11 @@
 # Checkout Finland Magento 2 Module
+
+## DEPRECATED
+
+**This extension has been deprecated**.  All of its functionality now exists as the rebranded 
+[`paytrail/paytrail-for-adobe-commerce`](https://github.com/paytrail/paytrail-for-adobe-commerce) module. 
+It is advised to upgrade to the new module.
+
 Checkout Finland's payment methods for your Magento 2 web store
 
 ***Always perform a backup of your database and source code before installing any Magento 2 extensions.***

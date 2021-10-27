@@ -24,21 +24,9 @@ class Version extends \Magento\Config\Block\System\Config\Form\Field
     protected function _getElementHtml(
         \Magento\Framework\Data\Form\Element\AbstractElement $element
     ) {
-        $version = 'v' . $this->versionHelper->getVersion();
-        try {
-            $githubContent = $this->versionHelper->getDecodedContentFromGithub();
-
-            if ($version != $githubContent['tag_name']) {
-                $html = '<strong style="color: red">' . $version . __(" - Newer version (%1) available. ", $githubContent['tag_name']) .
-                    "<a href= \"" . $githubContent['html_url'] . "\" target='_blank'> " .
-                    __("More details") . "</a></strong>";
-            } else {
-                $html = '<strong style="color: green">' . __("%1 - Latest version", $version) . '</strong>';
-
-            }
-        } catch (\Exception $e) {
-            return '<strong>' . __("%1 - Can't check for updates now", $version) . '</strong>';
-        }
-        return $html;
+        $url = "https://github.com/paytrail/paytrail-for-adobe-commerce";
+        return '<strong style="color: red">' . __("This module is now deprecated. ") .
+            "</strong>" . __("New module is available as paytrail/paytrail-for-adobe-commerce. ") . " <a href= \"" . $url . "\" target='_blank'> " .
+            __("Click here for more info") . "</a>";
     }
 }

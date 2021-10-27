@@ -59,34 +59,23 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
     public function isDisplayed()
     {
         try {
-            $githubContent = $this->versionHelper->getDecodedContentFromGithub();
-            $this->setSessionData("OPCheckoutGithubVersion", $githubContent);
-
+            $url = "https://github.com/paytrail/paytrail-for-adobe-commerce";
+            $versionData[] = [
+                'severity' => self::SEVERITY_CRITICAL,
+                'date_added' => date('Y-m-d H:i:s'),
+                'title' => __("Checkout Finland module is now DEPRECATED"),
+                'description' => __("The module has been rebranded and is now available at ") . $url,
+                'url' => $url,
+            ];
             /*
-             * This will compare the currently installed version with the latest available one.
-             * A message will appear after the login if the two are not matching.
+             * The parse function checks if the $versionData message exists in the inbox,
+             * otherwise it will create it and add it to the inbox.
              */
-            if ('v' . $this->versionHelper->getVersion() != $githubContent['tag_name']) {
-                $versionData[] = [
-                    'severity' => self::SEVERITY_CRITICAL,
-                    'date_added' => date('Y-m-d H:i:s'),
-                    'title' => __("Checkout Finland extension version %1 available!", $githubContent['tag_name']),
-                    'description' => $githubContent['body'],
-                    'url' => $githubContent['html_url'],
-                ];
-
-                /*
-                 * The parse function checks if the $versionData message exists in the inbox,
-                 * otherwise it will create it and add it to the inbox.
-                 */
-                $this->inboxFactory->create()->parse(array_reverse($versionData));
-
-                return true;
-            }
+            $this->inboxFactory->create()->parse(array_reverse($versionData));
+            return true;
         } catch (\Exception $e) {
             return false;
         }
-        return false;
     }
 
     /**
@@ -96,13 +85,9 @@ class VersionNotification implements \Magento\Framework\Notification\MessageInte
      */
     public function getText()
     {
-        $githubContent = $this->getSessionData("OPCheckoutGithubVersion");
-        $message = __('A new Checkout Finland extension version is now available: ');
-        $message .= __(
-            "<a href= \"" . $githubContent['html_url'] . "\" target='_blank'> " . $githubContent['tag_name'] . "!</a>"
-        );
-        $message .= __(" You are running the v%1 version. We advise to update your extension.",
-            $this->versionHelper->getVersion());
+        $url = "https://github.com/paytrail/paytrail-for-adobe-commerce";
+        $message = __("Checkout Finland module is now DEPRECATED. New module is available as paytrail/paytrail-for-adobe-commerce. ")
+            . " <a href= \"" . $url . "\" target='_blank'> " . __("Click here for more info");
         return __($message);
     }
 
