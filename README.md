@@ -1,5 +1,25 @@
 # Checkout Finland Magento 2 Module
+
 Checkout Finland's payment methods for your Magento 2 web store
+
+## DEPRECATED
+
+**This extension has been deprecated**.  All of its functionality now exists as the rebranded 
+[`paytrail/paytrail-for-adobe-commerce`](https://github.com/paytrail/paytrail-for-adobe-commerce) module. 
+It is advised to upgrade to the new module.
+
+## Updating to Paytrail for Adobe Commerce
+
+<b>Updating from this module requires manual installation.</b><br/>
+
+<b>Warning! Removing `op-merchant-services/op-payment-service-for-magento-2` results in payments made with Checkout Finland not refundable through Magento Admin. Payments can still be refunded through
+Paytrail’s Extranet.</b><br/>
+
+1. Follow the installation instructions of `paytrail/paytrail-for-adobe-commerce` found [here](https://github.com/paytrail/paytrail-for-adobe-commerce).
+2. Navigate to Adobe Commerce admin interface and select __Stores -> Store Configuration -> Sales -> Payment Methods -> Checkout Finland__
+3. Change __Enabled__ to __No__ to disable Checkout Finland payment method on checkout page
+
+<b>Please note that the module configurations will not carry over from Checkout Finland to Paytrail for Adobe Commerce! You will need to save these values and reapply them yourself. This also applies to the Payment Page Personalization settings! <br/> Certain classes, functions and CSS classes have also been renamed and any third party customizations will have to be revised.</b><br/>
 
 ***Always perform a backup of your database and source code before installing any Magento 2 extensions.***
 
@@ -13,11 +33,6 @@ This payment module has the following features:
 - The ability to restore and ship a cancelled order
 - Support for delayed payments (Collector etc.)
 - Support for multiple stores within a single Magento 2 instance
-
-## Updating
-
-<b>With the release of 1.3.0 the module has been rebranded. If updating from older versions this requires manually uninstalling the old version with the following command before updating:</b><br/>
-```composer remove op-merchant-services/op-payment-service-for-magento-2```
 
 ## Installation
 
